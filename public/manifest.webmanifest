@@ -1,0 +1,17 @@
+{
+  "name": "Tapas Grocery Store",
+  "short_name": "Tapas Store",
+  "description": "Fresh groceries, books, cosmetics, and fast local delivery.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8faf7",
+  "theme_color": "#2f9e44",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
