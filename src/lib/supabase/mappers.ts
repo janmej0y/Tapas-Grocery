@@ -6,7 +6,9 @@ type ProductRow = {
   category: Product["category"];
   price: number;
   image_url: string;
+  description?: string;
   stock: number;
+  min_stock?: number;
   brand: string;
   dietary: string[];
   unit_type: Product["unitType"];
@@ -21,7 +23,9 @@ export function mapProductRow(row: ProductRow): Product {
     category: row.category,
     price: Number(row.price),
     image_url: row.image_url,
+    description: row.description,
     stock: row.stock,
+    minStock: row.min_stock,
     brand: row.brand,
     dietary: row.dietary ?? [],
     unitType: row.unit_type,
@@ -77,6 +81,8 @@ export function addressToSupabaseRow(address: UserAddress, userId: string) {
     state: address.state,
     pincode: address.pincode,
     landmark: address.landmark,
+    latitude: address.latitude,
+    longitude: address.longitude,
     distance_km: address.distanceKm
   };
 }

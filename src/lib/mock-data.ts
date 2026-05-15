@@ -126,7 +126,9 @@ export const initialOrders: Order[] = [
       state: "West Bengal",
       pincode: "700001",
       landmark: "Near market gate",
-      distanceKm: 0.8
+      distanceKm: 0.8,
+      latitude: 22.5744,
+      longitude: 88.3629
     },
     items_ordered: "Gobindobhog Rice (1 kg) x 2, Masala Tea Pack (1 pack) x 1",
     total_amount: 245,
@@ -158,7 +160,9 @@ export const initialOrders: Order[] = [
       state: "West Bengal",
       pincode: "700073",
       landmark: "Book lane",
-      distanceKm: 1.4
+      distanceKm: 1.4,
+      latitude: 22.5762,
+      longitude: 88.3645
     },
     items_ordered: "School Notebook Set (1 set) x 1, Aloe Vera Gel (1 tube) x 1",
     total_amount: 280,
@@ -229,7 +233,9 @@ export const demoCustomer: CustomerAccount = {
       state: "West Bengal",
       pincode: "700001",
       landmark: "Near market gate",
-      distanceKm: 0.8
+      distanceKm: 0.8,
+      latitude: 22.5744,
+      longitude: 88.3629
     },
     {
       id: "addr-work",
@@ -242,8 +248,11 @@ export const demoCustomer: CustomerAccount = {
       state: "West Bengal",
       pincode: "700073",
       landmark: "Book lane",
-      distanceKm: 1.4
+      distanceKm: 1.4,
+      latitude: 22.5762,
+      longitude: 88.3645
     }
   ],
-  orderIds: ["ORD-2401"]
+  orderIds: ["ORD-2401"],
+  favoriteProductIds: ["p-101", "p-102"]
 };

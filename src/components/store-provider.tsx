@@ -1,13 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { isAdminPhone, normalizeLocalPhone } from "@/lib/admin-access";
 import { deliveryAgents, demoCustomer, initialOrders, initialProducts } from "@/lib/mock-data";
-import type { CartItem, CustomerAccount, DeliveryAgent, Order, OrderStatus, Product, ProductReview, RefundStatus, UserAddress } from "@/lib/types";
+import type { AdminActivity, CartItem, CustomerAccount, DeliveryAgent, Order, OrderStatus, Product, ProductReview, RefundStatus, UserAddress } from "@/lib/types";
 
 type ProductInput = Omit<Product, "id">;
 type StoredState = {
   blockedPhones: string[];
+  cart: CartItem[];
   customer: CustomerAccount;
+  activityLog: AdminActivity[];
   orders: Order[];
   products: Product[];
 };
@@ -18,6 +21,7 @@ type StoreContextValue = {
   orders: Order[];
   customer: CustomerAccount;
   blockedPhones: string[];
+  activityLog: AdminActivity[];
   agents: DeliveryAgent[];
   lowStockProducts: Product[];
   pendingOtp: string;
@@ -26,6 +30,7 @@ type StoreContextValue = {
   markPhoneVerified: (phone: string) => void;
   logoutCustomer: () => void;
   updateCustomerAddress: (address: UserAddress) => void;
+  toggleFavoriteProduct: (productId: string) => void;
   blockPhone: (phone: string) => void;
   unblockPhone: (phone: string) => void;
   addToCart: (product: Product, selectedUnit: string, quantity: number) => void;
@@ -35,6 +40,7 @@ type StoreContextValue = {
   addProduct: (product: ProductInput) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (productId: string) => void;
+  importProducts: (products: Product[]) => void;
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   assignDeliveryAgent: (orderId: string, agentId: string) => void;
@@ -46,6 +52,7 @@ type StoreContextValue = {
 
 const StoreContext = createContext<StoreContextValue | null>(null);
 const STORAGE_KEY = "tapas-grocery-store-state-v2";
+const VERIFIED_PHONE_KEY = "tapas-verified-phone";
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -53,9 +60,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [customer, setCustomer] = useState<CustomerAccount>(demoCustomer);
   const [blockedPhones, setBlockedPhones] = useState<string[]>([]);
+  const [activityLog, setActivityLog] = useState<AdminActivity[]>([]);
   const [pendingOtp, setPendingOtp] = useState("");
   const [pendingPhone, setPendingPhone] = useState("");
-  const lowStockProducts = useMemo(() => products.filter((product) => product.stock <= 10), [products]);
+  const lowStockProducts = useMemo(() => products.filter((product) => product.stock <= (product.minStock ?? 10)), [products]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -65,10 +73,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     try {
       const parsed = JSON.parse(stored) as StoredState;
+      const verifiedPhone = window.localStorage.getItem(VERIFIED_PHONE_KEY);
+      setCart(parsed.cart ?? []);
       setProducts(parsed.products ?? initialProducts);
       setOrders(parsed.orders ?? initialOrders);
-      setCustomer(parsed.customer ?? demoCustomer);
+      setCustomer({
+        ...(parsed.customer ?? demoCustomer),
+        favoriteProductIds: (parsed.customer ?? demoCustomer).favoriteProductIds ?? [],
+        isPhoneVerified: Boolean(verifiedPhone && verifiedPhone === (parsed.customer ?? demoCustomer).phone)
+      });
       setBlockedPhones(parsed.blockedPhones ?? []);
+      setActivityLog(parsed.activityLog ?? []);
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
     }
@@ -88,12 +103,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const nextState: StoredState = {
       blockedPhones,
+      cart,
       customer,
+      activityLog,
       orders,
       products
     };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
-  }, [blockedPhones, customer, orders, products]);
+  }, [activityLog, blockedPhones, cart, customer, orders, products]);
 
   const value = useMemo<StoreContextValue>(
     () => ({
@@ -102,6 +119,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       orders,
       customer,
       blockedPhones,
+      activityLog,
       agents: deliveryAgents,
       lowStockProducts,
       pendingOtp,
@@ -129,6 +147,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             isBlocked: false,
             addresses: current.addresses.map((address) => ({ ...address, phone: pendingPhone }))
           }));
+          window.localStorage.setItem(VERIFIED_PHONE_KEY, pendingPhone);
           setPendingOtp("");
         }
 
@@ -143,10 +162,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           isBlocked: blockedPhones.includes(normalizedPhone),
           addresses: current.addresses.map((address) => ({ ...address, phone: normalizedPhone }))
         }));
+        window.localStorage.setItem(VERIFIED_PHONE_KEY, normalizedPhone);
         setPendingOtp("");
       },
       logoutCustomer: () => {
         setCustomer((current) => ({ ...current, isPhoneVerified: false }));
+        window.localStorage.removeItem(VERIFIED_PHONE_KEY);
         setCart([]);
       },
       updateCustomerAddress: (address) => {
@@ -161,6 +182,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               : [address, ...current.addresses]
           };
         });
+        pushActivity(setActivityLog, "Address saved", `${address.label} address saved for ${address.receiverName}`);
+      },
+      toggleFavoriteProduct: (productId) => {
+        setCustomer((current) => {
+          const exists = current.favoriteProductIds.includes(productId);
+          return {
+            ...current,
+            favoriteProductIds: exists
+              ? current.favoriteProductIds.filter((id) => id !== productId)
+              : [productId, ...current.favoriteProductIds]
+          };
+        });
       },
       blockPhone: (phone) => {
         const normalizedPhone = normalizePhone(phone);
@@ -168,10 +201,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        if (isAdminPhone(normalizedPhone)) {
+          return;
+        }
+
         setBlockedPhones((items) => Array.from(new Set([...items, normalizedPhone])));
         setCustomer((current) =>
           current.phone === normalizedPhone ? { ...current, isBlocked: true, isPhoneVerified: false } : current
         );
+        pushActivity(setActivityLog, "User blocked", `Phone ${normalizedPhone} was blocked`);
         fetch("/api/users/block", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -182,6 +220,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const normalizedPhone = normalizePhone(phone);
         setBlockedPhones((items) => items.filter((item) => item !== normalizedPhone));
         setCustomer((current) => (current.phone === normalizedPhone ? { ...current, isBlocked: false } : current));
+        pushActivity(setActivityLog, "User unblocked", `Phone ${normalizedPhone} was unblocked`);
         fetch("/api/users/block", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -189,7 +228,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }).catch(() => undefined);
       },
       addToCart: (product, selectedUnit, quantity) => {
-        const nextQuantity = Math.max(1, Math.floor(quantity || 1));
+        const nextQuantity = Math.min(product.stock, Math.max(1, Math.floor(quantity || 1)));
         const key = getCartLineKey(product.id, selectedUnit);
 
         setCart((items) => {
@@ -198,7 +237,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (existing) {
             return items.map((item) =>
               getCartLineKey(item.product.id, item.selectedUnit) === key
-                ? { ...item, quantity: item.quantity + nextQuantity }
+                ? { ...item, quantity: Math.min(product.stock, item.quantity + nextQuantity) }
                 : item
             );
           }
@@ -214,7 +253,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           items
             .map((item) =>
               getCartLineKey(item.product.id, item.selectedUnit) === key
-                ? { ...item, quantity: nextQuantity }
+                ? { ...item, quantity: Math.min(item.product.stock, nextQuantity) }
                 : item
             )
             .filter((item) => item.quantity > 0)
@@ -229,6 +268,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addProduct: (product) => {
         const localProduct = { ...product, id: `p-${Date.now()}` };
         setProducts((items) => [localProduct, ...items]);
+        pushActivity(setActivityLog, "Product added", product.name);
         fetch("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -244,6 +284,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       updateProduct: (product) => {
         setProducts((items) => items.map((item) => (item.id === product.id ? product : item)));
+        pushActivity(setActivityLog, "Product updated", product.name);
         fetch("/api/products", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -251,12 +292,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }).catch(() => undefined);
       },
       deleteProduct: (productId) => {
+        const deletedProduct = products.find((item) => item.id === productId);
         setProducts((items) => items.filter((item) => item.id !== productId));
+        pushActivity(setActivityLog, "Product deleted", deletedProduct?.name ?? productId);
         fetch("/api/products", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: productId })
         }).catch(() => undefined);
+      },
+      importProducts: (nextProducts) => {
+        setProducts((items) => {
+          const merged = new Map(items.map((item) => [item.id, item]));
+          nextProducts.forEach((product) => merged.set(product.id, product));
+          return Array.from(merged.values());
+        });
+        pushActivity(setActivityLog, "Products imported", `${nextProducts.length} products imported from CSV`);
       },
       addOrder: (order) => {
         setOrders((items) => [order, ...items]);
@@ -270,20 +321,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...current,
           orderIds: Array.from(new Set([order.order_id, ...current.orderIds]))
         }));
+        pushActivity(setActivityLog, "Order placed", `${order.order_id} from ${order.customer_name}`);
         window.dispatchEvent(new CustomEvent("tapas:new-order", { detail: order }));
       },
       updateOrderStatus: (orderId, status) => {
         setOrders((items) => items.map((order) => (order.order_id === orderId ? { ...order, status } : order)));
+        pushActivity(setActivityLog, "Order status changed", `${orderId} is now ${status}`);
       },
       assignDeliveryAgent: (orderId, agentId) => {
         setOrders((items) =>
           items.map((order) => (order.order_id === orderId ? { ...order, assigned_agent_id: agentId || undefined } : order))
         );
+        pushActivity(setActivityLog, "Delivery agent assigned", `${orderId} assigned to ${agentId || "unassigned"}`);
       },
       updateDeliveryEta: (orderId, eta) => {
         setOrders((items) =>
           items.map((order) => (order.order_id === orderId ? { ...order, delivery_eta: eta.trim() || "Waiting for owner confirmation" } : order))
         );
+        pushActivity(setActivityLog, "Delivery ETA updated", `${orderId}: ${eta.trim() || "Waiting for owner confirmation"}`);
       },
       updateRefundStatus: (orderId, refundStatus, reason) => {
         setOrders((items) =>
@@ -298,6 +353,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               : order
           )
         );
+        pushActivity(setActivityLog, "Refund updated", `${orderId}: ${refundStatus}${reason ? ` - ${reason}` : ""}`);
       },
       addProductReview: (productId, review) => {
         setProducts((items) =>
@@ -318,6 +374,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               : product
           )
         );
+        pushActivity(setActivityLog, "Product review added", `Review added for ${productId}`);
       },
       reorder: (orderId) => {
         const order = orders.find((item) => item.order_id === orderId);
@@ -351,7 +408,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
       }
     }),
-    [blockedPhones, cart, customer, lowStockProducts, orders, pendingOtp, pendingPhone, products]
+    [activityLog, blockedPhones, cart, customer, lowStockProducts, orders, pendingOtp, pendingPhone, products]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -368,7 +425,7 @@ export function useStore() {
 }
 
 function normalizePhone(phone: string) {
-  return phone.replace(/\D/g, "").slice(-10);
+  return normalizeLocalPhone(phone);
 }
 
 function getCartLineKey(productId: string, selectedUnit: string) {
@@ -380,4 +437,16 @@ function getOrderedQuantity(itemsOrdered: string, productName: string) {
     const match = item.trim().match(/^(.*) \((.*)\) x (\d+)$/);
     return match?.[1] === productName ? total + Number(match[3]) : total;
   }, 0);
+}
+
+function pushActivity(setActivityLog: Dispatch<SetStateAction<AdminActivity[]>>, action: string, details: string) {
+  setActivityLog((items) => [
+    {
+      id: `act-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      action,
+      details,
+      created_at: new Date().toISOString()
+    },
+    ...items
+  ].slice(0, 80));
 }

@@ -8,9 +8,11 @@ import {
   LayoutGrid,
   LockKeyhole,
   Menu,
+  ShieldCheck,
   Search,
   ShoppingCart,
   Store,
+  UserRound,
   UserRoundCheck,
   X
 } from "lucide-react";
@@ -25,8 +27,10 @@ const menuItems = [
   { href: "/#categories", icon: LayoutGrid, label: "Products" },
   { href: "/#product-tools", icon: Search, label: "Search & Filters" },
   { href: "/#assistant", icon: Bot, label: "Assistant" },
-  { href: "/#cart", icon: ShoppingCart, label: "Cart & Checkout" },
-  { href: "/#phone-login", icon: UserRoundCheck, label: "Phone Login" },
+  { href: "/account", icon: UserRound, label: "Account & Orders" },
+  { href: "/cart", icon: ShoppingCart, label: "Cart & Checkout" },
+  { href: "/cart#phone-login", icon: UserRoundCheck, label: "Phone Login" },
+  { href: "/policies", icon: ShieldCheck, label: "Policies" },
   { href: "/admin", icon: LockKeyhole, label: "Admin" }
 ];
 
@@ -63,14 +67,14 @@ export function Navbar() {
             <a href="/#categories" className="hidden rounded-md px-3 py-2 text-sm font-semibold text-ink hover:bg-leaf-50 md:inline-flex">
               {t("categories")}
             </a>
-            <a href="/#cart" className="relative rounded-md p-2 text-ink hover:bg-leaf-50" aria-label={t("cart")} title={t("cart")}>
+            <Link href="/cart" className="relative rounded-md p-2 text-ink hover:bg-leaf-50" aria-label={t("cart")} title={t("cart")}>
               <ShoppingCart className="h-5 w-5" aria-hidden="true" />
               {cartCount > 0 ? (
                 <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-marigold px-1 text-xs font-bold text-ink">
                   {cartCount}
                 </span>
               ) : null}
-            </a>
+            </Link>
             <button
               type="button"
               onClick={toggleLanguage}
@@ -102,7 +106,9 @@ export function Navbar() {
                   <Store className="h-6 w-6 shrink-0 text-leaf-600" />
                   <div className="min-w-0">
                     <p className="truncate font-black text-ink">{t("storeName")}</p>
-                    <p className="text-sm text-ink/60">{cartCount} cart items · {formatCurrency(cartTotal)}</p>
+                    <p className="text-sm text-ink/60">
+                      {cartCount} cart items · {formatCurrency(cartTotal)}
+                    </p>
                   </div>
                 </div>
                 <button type="button" onClick={() => setIsMenuOpen(false)} className="rounded-md border border-black/10 p-2 hover:bg-leaf-50" aria-label="Close menu">
@@ -126,7 +132,7 @@ export function Navbar() {
                         <Icon className="h-5 w-5 text-leaf-700" />
                         {item.label}
                       </span>
-                      {item.href === "/#cart" && cartCount > 0 ? (
+                      {item.href === "/cart" && cartCount > 0 ? (
                         <span className="rounded-full bg-marigold px-2 py-1 text-xs text-ink">{cartCount}</span>
                       ) : null}
                     </Link>
@@ -139,16 +145,16 @@ export function Navbar() {
       ) : null}
 
       {cartCount > 0 ? (
-        <a
-          href="/#cart"
-          className="fixed bottom-4 left-4 right-4 z-40 inline-flex items-center justify-between rounded-lg bg-ink px-4 py-3 font-bold text-white shadow-soft hover:bg-leaf-700 sm:left-auto sm:right-6 sm:w-80"
+        <Link
+          href="/cart"
+          className="fixed bottom-4 left-4 right-4 z-40 inline-flex items-center justify-between rounded-2xl bg-[#16a56c] px-5 py-4 font-black text-white shadow-soft hover:bg-leaf-700 sm:left-auto sm:right-6 sm:w-80"
         >
           <span className="inline-flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            View cart
+            {cartCount} items added
           </span>
-          <span>{cartCount} · {formatCurrency(cartTotal)}</span>
-        </a>
+          <span>View Cart</span>
+        </Link>
       ) : null}
     </>
   );

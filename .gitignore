@@ -3,6 +3,8 @@ node_modules
 devserver.*.log
 .env
 .env*.local
+supabase/.branches
+supabase/.temp
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

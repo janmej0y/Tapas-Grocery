@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { AlertTriangle, Ban, Edit3, Eye, FileText, IndianRupee, LayoutDashboard, MessageCircle, PackagePlus, Save, Trash2, Truck, Undo2, XCircle } from "lucide-react";
+import { AlertTriangle, Ban, Download, Edit3, Eye, FileText, History, IndianRupee, LayoutDashboard, MessageCircle, PackagePlus, Save, Trash2, Truck, Undo2, Upload, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useLanguage } from "@/components/language-provider";
 import { useStore } from "@/components/store-provider";
+import { ADMIN_PHONE, isAdminPhone } from "@/lib/admin-access";
 import { formatCurrency } from "@/lib/format";
 import { buildWhatsAppOrderUrl, downloadInvoice } from "@/lib/invoice";
 import type { Order, Product, ProductCategory } from "@/lib/types";
@@ -31,23 +32,31 @@ export default function AdminPage() {
   const { t } = useLanguage();
   const {
     addProduct,
+    activityLog,
     agents,
     assignDeliveryAgent,
     blockPhone,
     blockedPhones,
     customer,
     deleteProduct,
+    logoutCustomer,
     lowStockProducts,
+    markPhoneVerified,
     orders,
+    pendingOtp,
     products,
+    sendOtp,
     unblockPhone,
     updateDeliveryEta,
     updateOrderStatus,
     updateProduct,
-    updateRefundStatus
+    updateRefundStatus,
+    importProducts
   } = useStore();
   const [email, setEmail] = useState("admin@tapas.local");
   const [password, setPassword] = useState("");
+  const [adminPhone, setAdminPhone] = useState(ADMIN_PHONE);
+  const [adminOtp, setAdminOtp] = useState("");
   const [form, setForm] = useState<Omit<Product, "id">>(emptyProduct);
   const [dietaryText, setDietaryText] = useState("");
   const [unitOptionsText, setUnitOptionsText] = useState("1 pack");
@@ -58,7 +67,8 @@ export default function AdminPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
-  const isAdmin = session?.user?.role === "admin";
+  const isOwnerPhoneAdmin = customer.isPhoneVerified && isAdminPhone(customer.phone) && !customer.isBlocked;
+  const isAdmin = session?.user?.role === "admin" || isOwnerPhoneAdmin;
   const revenue = useMemo(() => orders.reduce((total, order) => total + order.total_amount, 0), [orders]);
   const dailyRevenue = useMemo(() => buildDailyRevenue(orders), [orders]);
   const topSelling = useMemo(() => buildTopSelling(orders), [orders]);
@@ -88,6 +98,68 @@ export default function AdminPage() {
     }
 
     toast.success("Admin signed in");
+  }
+
+  async function sendAdminOtp() {
+    if (!isAdminPhone(adminPhone)) {
+      toast.error("Only the owner mobile number can unlock the dashboard.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: adminPhone })
+      });
+      const data = (await response.json()) as { provider?: string; error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "OTP could not be sent.");
+      }
+
+      if (data.provider === "demo") {
+        sendOtp(adminPhone);
+      }
+
+      toast.success(data.provider === "demo" ? "Demo owner OTP is 123456" : "Owner OTP sent by Supabase");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "OTP could not be sent.");
+    }
+  }
+
+  async function verifyAdminOtp() {
+    if (!isAdminPhone(adminPhone)) {
+      toast.error("Only the owner mobile number can unlock the dashboard.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: adminPhone, token: adminOtp })
+      });
+      const data = (await response.json()) as { provider?: string; error?: string; role?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Invalid OTP.");
+      }
+
+      if (data.provider === "demo" && !verifyLocalAdminOtp(adminOtp, pendingOtp)) {
+        throw new Error("Invalid demo OTP.");
+      }
+
+      if (data.role !== "admin") {
+        throw new Error("This phone number is not allowed to access the dashboard.");
+      }
+
+      markPhoneVerified(adminPhone);
+      setAdminOtp("");
+      toast.success("Owner phone verified. Dashboard unlocked.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Invalid OTP.");
+    }
   }
 
   function submitProduct() {
@@ -132,7 +204,9 @@ export default function AdminPage() {
       category: product.category,
       price: product.price,
       image_url: product.image_url,
+      description: product.description,
       stock: product.stock,
+      minStock: product.minStock,
       brand: product.brand,
       dietary: product.dietary,
       unitType: product.unitType,
@@ -145,7 +219,85 @@ export default function AdminPage() {
     setVariantPricesText(Object.entries(product.variantPrices).map(([unit, price]) => `${unit}:${price}`).join(", "));
   }
 
-  if (status === "loading") {
+  function exportProductsCsv() {
+    const rows = [
+      ["id", "name", "category", "price", "image_url", "stock", "brand", "unitType", "unitOptions", "variantPrices", "dietary"],
+      ...products.map((product) => [
+        product.id,
+        product.name,
+        product.category,
+        String(product.price),
+        product.image_url,
+        String(product.stock),
+        product.brand,
+        product.unitType,
+        product.unitOptions.join("|"),
+        JSON.stringify(product.variantPrices),
+        product.dietary.join("|")
+      ])
+    ];
+    const csv = rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `tapas-products-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Product CSV exported");
+  }
+
+  function importProductsCsv(file: File | undefined) {
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const csv = String(reader.result ?? "");
+        const [, ...lines] = csv.split(/\r?\n/).filter(Boolean);
+        const importedProducts = lines.map(parseProductCsvLine);
+        importProducts(importedProducts);
+        toast.success(`${importedProducts.length} products imported`);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "CSV import failed");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  async function uploadProductImage(file: File | undefined) {
+    if (!file) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/products/upload-image", {
+        method: "POST",
+        body: formData
+      });
+      const data = (await response.json()) as { imageUrl?: string; error?: string };
+
+      if (!response.ok || !data.imageUrl) {
+        throw new Error(data.error ?? "Supabase upload failed");
+      }
+
+      setForm((current) => ({ ...current, image_url: data.imageUrl! }));
+      toast.success("Image uploaded to Supabase Storage");
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setForm((current) => ({ ...current, image_url: String(reader.result ?? "") }));
+        toast.success("Local image preview attached");
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  if (status === "loading" && !isOwnerPhoneAdmin) {
     return <main className="mx-auto max-w-7xl px-4 py-10">Loading secure session...</main>;
   }
 
@@ -154,7 +306,43 @@ export default function AdminPage() {
       <main className="mx-auto grid min-h-[calc(100vh-73px)] max-w-md place-items-center px-4 py-12">
         <section className="w-full rounded-lg border border-black/10 bg-white p-6 shadow-soft">
           <h1 className="text-3xl font-black text-ink">{t("adminLogin")}</h1>
-          <p className="mt-2 text-sm text-ink/65">NextAuth credentials login protects this owner dashboard.</p>
+          <p className="mt-2 text-sm text-ink/65">Owner phone {ADMIN_PHONE} can unlock the full dashboard after OTP verification.</p>
+          <div className="mt-6 rounded-lg border border-leaf-100 bg-leaf-50 p-4">
+            <h2 className="font-black text-ink">Owner phone login</h2>
+            <label className="mt-4 block">
+              <span className="text-sm font-bold">Owner mobile number</span>
+              <input
+                value={adminPhone}
+                onChange={(event) => setAdminPhone(event.target.value)}
+                className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2"
+                inputMode="tel"
+                placeholder={ADMIN_PHONE}
+              />
+            </label>
+            <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+              <input
+                value={adminOtp}
+                onChange={(event) => setAdminOtp(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    verifyAdminOtp();
+                  }
+                }}
+                className="min-w-0 rounded-md border border-black/10 bg-white px-3 py-2"
+                inputMode="numeric"
+                placeholder="OTP"
+              />
+              <button type="button" onClick={sendAdminOtp} className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-leaf-100">
+                Send OTP
+              </button>
+            </div>
+            <button type="button" onClick={verifyAdminOtp} className="mt-3 w-full rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
+              Verify owner phone
+            </button>
+            <p className="mt-2 text-xs text-ink/60">Local demo OTP: 123456. With Supabase configured, the code is sent to this phone.</p>
+          </div>
+          <div className="my-6 border-t border-black/10" />
+          <p className="text-sm text-ink/65">You can also use the existing NextAuth owner password login.</p>
           <label className="mt-6 block">
             <span className="text-sm font-bold">Email</span>
             <input value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2" />
@@ -191,8 +379,20 @@ export default function AdminPage() {
         <div>
           <h1 className="text-4xl font-black text-ink">{t("dashboard")}</h1>
           <p className="mt-2 text-ink/65">Secure owner controls for products, inventory, analytics, and incoming orders.</p>
+          {isOwnerPhoneAdmin ? <p className="mt-1 text-sm font-bold text-leaf-700">Owner phone verified: {ADMIN_PHONE}</p> : null}
         </div>
-        <button type="button" onClick={() => signOut({ callbackUrl: "/" })} className="rounded-md border border-black/10 bg-white px-4 py-2 font-bold hover:bg-leaf-50">
+        <button
+          type="button"
+          onClick={() => {
+            if (session?.user?.role === "admin") {
+              signOut({ callbackUrl: "/" });
+            } else {
+              logoutCustomer();
+              toast.success("Owner phone signed out");
+            }
+          }}
+          className="rounded-md border border-black/10 bg-white px-4 py-2 font-bold hover:bg-leaf-50"
+        >
           {t("logout")}
         </button>
       </div>
@@ -223,6 +423,53 @@ export default function AdminPage() {
               </span>
             ))
           )}
+        </div>
+      </section>
+
+      <section className="mt-8 grid gap-4 lg:grid-cols-[0.75fr_1.25fr]">
+        <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">
+              <Upload className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-2xl font-black text-ink">Bulk product tools</h2>
+              <p className="text-sm text-ink/65">Import/export products for fast catalog updates.</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <button type="button" onClick={exportProductsCsv} className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 font-bold text-white hover:bg-leaf-700">
+              <Download className="h-4 w-4" />
+              Export CSV
+            </button>
+            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-black/10 bg-white px-4 py-3 font-bold hover:bg-leaf-50">
+              <Upload className="h-4 w-4" />
+              Import CSV
+              <input type="file" accept=".csv,text/csv" onChange={(event) => importProductsCsv(event.target.files?.[0])} className="sr-only" />
+            </label>
+          </div>
+          <p className="mt-3 text-xs text-ink/55">Image uploads should use Supabase Storage in production. CSV currently accepts image_url values for fast catalog entry.</p>
+        </div>
+
+        <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">
+              <History className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-2xl font-black text-ink">Admin activity log</h2>
+              <p className="text-sm text-ink/65">Tracks important product, order, user, refund, and ETA changes.</p>
+            </div>
+          </div>
+          <div className="mt-4 max-h-72 overflow-auto rounded-lg border border-black/10">
+            {activityLog.length ? activityLog.slice(0, 20).map((item) => (
+              <div key={item.id} className="border-b border-black/10 p-3 text-sm last:border-b-0">
+                <p className="font-black text-ink">{item.action}</p>
+                <p className="text-ink/70">{item.details}</p>
+                <p className="mt-1 text-xs text-ink/45">{new Date(item.created_at).toLocaleString("en-IN")}</p>
+              </div>
+            )) : <p className="p-4 text-sm text-ink/60">No admin activity yet.</p>}
+          </div>
         </div>
       </section>
 
@@ -316,6 +563,10 @@ export default function AdminPage() {
             </label>
             <AdminInput label={t("brand")} value={form.brand} onChange={(value) => setForm((current) => ({ ...current, brand: value }))} />
             <label className="block">
+              <span className="text-sm font-bold">Description</span>
+              <textarea value={form.description ?? ""} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="mt-2 min-h-24 w-full rounded-md border border-black/10 px-3 py-2" />
+            </label>
+            <label className="block">
               <span className="text-sm font-bold">Sale type</span>
               <select value={form.unitType} onChange={(event) => setForm((current) => ({ ...current, unitType: event.target.value as Product["unitType"] }))} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2">
                 <option value="weight">Gram / Kg</option>
@@ -324,7 +575,12 @@ export default function AdminPage() {
             </label>
             <AdminInput label={t("price")} type="number" value={String(form.price)} onChange={(value) => setForm((current) => ({ ...current, price: Number(value) }))} />
             <AdminInput label={t("imageUrl")} value={form.image_url} onChange={(value) => setForm((current) => ({ ...current, image_url: value }))} />
+            <label className="block">
+              <span className="text-sm font-bold">Upload product photo</span>
+              <input type="file" accept="image/*" onChange={(event) => uploadProductImage(event.target.files?.[0])} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2" />
+            </label>
             <AdminInput label={t("stock")} type="number" value={String(form.stock)} onChange={(value) => setForm((current) => ({ ...current, stock: Number(value) }))} />
+            <AdminInput label="Low-stock threshold" type="number" value={String(form.minStock ?? 10)} onChange={(value) => setForm((current) => ({ ...current, minStock: Number(value) }))} />
             <AdminInput label="Unit options" value={unitOptionsText} onChange={setUnitOptionsText} />
             <AdminInput label="Variant prices" value={variantPricesText} onChange={setVariantPricesText} />
             <AdminInput label="Dietary tags" value={dietaryText} onChange={setDietaryText} />
@@ -500,6 +756,14 @@ export default function AdminPage() {
                 <p>Distance from shop: {selectedOrder.delivery_distance} km</p>
                 <p>Receiver: {selectedOrder.delivery_address.receiverName}</p>
                 <p>Phone: {selectedOrder.delivery_address.phone}</p>
+                <a
+                  href={orderMapUrl(selectedOrder)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex font-bold text-leaf-700 hover:underline"
+                >
+                  Open delivery location
+                </a>
               </DetailBlock>
               <DetailBlock title="Delivery Agent">
                 <select
@@ -630,6 +894,72 @@ function parseVariantPrices(value: string) {
 
     return prices;
   }, {});
+}
+
+function escapeCsvCell(value: string) {
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
+function parseProductCsvLine(line: string): Product {
+  const cells = parseCsvLine(line);
+  const [id, name, category, price, image_url, stock, brand, unitType, unitOptions, variantPrices, dietary] = cells;
+
+  if (!id || !name || !category || !price || !image_url || !brand) {
+    throw new Error("CSV row is missing required product fields.");
+  }
+
+  return {
+    id,
+    name,
+    category: category as ProductCategory,
+    price: Number(price),
+    image_url,
+    stock: Number(stock),
+    brand,
+    dietary: dietary ? dietary.split("|").filter(Boolean) : [],
+    unitType: unitType === "weight" ? "weight" : "package",
+    unitOptions: unitOptions ? unitOptions.split("|").filter(Boolean) : ["1 pack"],
+    variantPrices: variantPrices ? JSON.parse(variantPrices) as Record<string, number> : { "1 pack": Number(price) },
+    reviews: []
+  };
+}
+
+function parseCsvLine(line: string) {
+  const cells: string[] = [];
+  let current = "";
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const next = line[index + 1];
+
+    if (char === '"' && quoted && next === '"') {
+      current += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      cells.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  cells.push(current);
+  return cells;
+}
+
+function orderMapUrl(order: Order) {
+  const { latitude, longitude } = order.delivery_address;
+  const query = typeof latitude === "number" && typeof longitude === "number"
+    ? `${latitude},${longitude}`
+    : `${order.delivery_address.line1}, ${order.delivery_address.line2}, ${order.delivery_address.city}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+function verifyLocalAdminOtp(otp: string, pendingOtp: string) {
+  return otp === pendingOtp || otp === "123456";
 }
 
 function buildDailyRevenue(orders: Order[]) {

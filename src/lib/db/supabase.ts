@@ -7,12 +7,14 @@ create table public.products (
   category text not null check (category in ('grocery', 'books', 'cosmetics')),
   price numeric(10, 2) not null check (price >= 0),
   image_url text not null,
+  description text,
   brand text not null,
   dietary text[] not null default '{}',
   unit_type text not null check (unit_type in ('weight', 'package')),
   unit_options text[] not null default '{}',
   variant_prices jsonb not null default '{}',
   stock integer not null check (stock >= 0),
+  min_stock integer not null default 10,
   created_at timestamptz not null default now()
 );
 
@@ -20,6 +22,7 @@ create table public.customer_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null,
   phone text unique not null,
+  role text not null default 'customer' check (role in ('customer', 'admin', 'delivery_partner')),
   phone_verified boolean not null default false,
   blocked_at timestamptz,
   blocked_reason text,
@@ -44,8 +47,17 @@ create table public.addresses (
   state text not null,
   pincode text not null,
   landmark text,
+  latitude numeric(10, 7),
+  longitude numeric(10, 7),
   distance_km numeric(5, 2) not null check (distance_km >= 0 and distance_km <= 2),
   created_at timestamptz not null default now()
+);
+
+create table public.favorite_products (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  product_id uuid not null references public.products(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, product_id)
 );
 
 create table public.orders (
@@ -68,6 +80,14 @@ create table public.orders (
   refund_status text not null default 'Not requested',
   cancellation_reason text,
   invoice_number text not null,
+  created_at timestamptz not null default now()
+);
+
+create table public.admin_activity_log (
+  id uuid primary key default gen_random_uuid(),
+  actor_user_id uuid references auth.users(id),
+  action text not null,
+  details text not null,
   created_at timestamptz not null default now()
 );
 
@@ -103,4 +123,11 @@ create table public.promo_codes (
   min_cart_total numeric(10, 2) not null default 0,
   active boolean not null default true
 );
+
+-- Recommended storage bucket for product photos:
+-- insert into storage.buckets (id, name, public) values ('product-images', 'product-images', true);
+
+-- Useful realtime channels:
+-- alter publication supabase_realtime add table public.orders;
+-- alter publication supabase_realtime add table public.admin_activity_log;
 `;

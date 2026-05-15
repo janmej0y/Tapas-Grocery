@@ -6,7 +6,9 @@ export type Product = {
   category: ProductCategory;
   price: number;
   image_url: string;
+  description?: string;
   stock: number;
+  minStock?: number;
   brand: string;
   dietary: string[];
   unitType: "weight" | "package";
@@ -83,6 +85,8 @@ export type UserAddress = {
   pincode: string;
   landmark: string;
   distanceKm: number;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type CustomerAccount = {
@@ -93,6 +97,14 @@ export type CustomerAccount = {
   isBlocked: boolean;
   addresses: UserAddress[];
   orderIds: string[];
+  favoriteProductIds: string[];
+};
+
+export type AdminActivity = {
+  id: string;
+  action: string;
+  details: string;
+  created_at: string;
 };
 
 export type DeliveryResult =

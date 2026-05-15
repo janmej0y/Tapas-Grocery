@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { isAdminPhone } from "@/lib/admin-access";
 import { normalizeIndianPhone } from "@/lib/supabase/config";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { profileFromPhone } from "@/lib/supabase/mappers";
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         provider: "demo",
         user: { id: "demo-user", phone: normalizedPhone },
+        role: isAdminPhone(normalizedPhone) ? "admin" : "customer",
         session: null
       });
     }
@@ -71,6 +73,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     provider: "supabase",
     user: data.user,
+    role: isAdminPhone(normalizedPhone) ? "admin" : "customer",
     session: data.session
   });
 }

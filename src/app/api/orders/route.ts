@@ -10,6 +10,7 @@ import type { Order, UserAddress } from "@/lib/types";
 type CheckoutItem = {
   productId: string;
   name: string;
+  selectedUnit?: string;
   price: number;
   quantity: number;
 };
@@ -89,6 +90,8 @@ export async function POST(request: Request) {
         uuidItems.map((item) => ({
           order_id: orderId,
           product_id: item.productId,
+          product_name: item.name,
+          selected_unit: item.selectedUnit ?? "1",
           quantity: item.quantity,
           unit_price: item.price
         }))

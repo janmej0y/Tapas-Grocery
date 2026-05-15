@@ -1,6 +1,7 @@
 "use client";
 
-import { Minus, Plus, ShoppingBasket, Star } from "lucide-react";
+import Link from "next/link";
+import { Heart, Minus, Plus, ShoppingBasket, Star } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -12,7 +13,7 @@ import { getUnitPrice } from "@/lib/units";
 
 export function ProductCard({ product }: { product: Product }) {
   const { t } = useLanguage();
-  const { addProductReview, addToCart, customer } = useStore();
+  const { addProductReview, addToCart, customer, toggleFavoriteProduct } = useStore();
   const [isChoosing, setIsChoosing] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(product.unitOptions[0]);
   const [quantity, setQuantity] = useState(1);
@@ -23,6 +24,7 @@ export function ProductCard({ product }: { product: Product }) {
     product.reviews.length > 0
       ? product.reviews.reduce((total, review) => total + review.rating, 0) / product.reviews.length
       : 0;
+  const isFavorite = customer.favoriteProductIds.includes(product.id);
 
   function submitReview() {
     if (!customer.isPhoneVerified) {
@@ -60,10 +62,23 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="space-y-4 p-4">
         <div>
           <div className="flex items-start justify-between gap-3">
-            <button type="button" onClick={() => setIsChoosing((value) => !value)} className="text-left text-lg font-bold text-ink hover:text-leaf-700">
+            <Link href={`/products/${product.id}`} className="text-left text-lg font-bold text-ink hover:text-leaf-700">
               {product.name}
-            </button>
-            <span className="rounded-full bg-leaf-50 px-2 py-1 text-xs font-bold text-leaf-700">{product.brand}</span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleFavoriteProduct(product.id);
+                  toast.success(isFavorite ? "Removed from favorites" : "Saved to favorites");
+                }}
+                className={`rounded-full p-2 ${isFavorite ? "bg-red-50 text-red-700" : "bg-leaf-50 text-ink/60"}`}
+                aria-label={isFavorite ? "Remove from favorites" : "Save to favorites"}
+              >
+                <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
+              </button>
+              <span className="rounded-full bg-leaf-50 px-2 py-1 text-xs font-bold text-leaf-700">{product.brand}</span>
+            </div>
           </div>
           <p className="mt-1 text-sm text-ink/65">
             {product.stock} {t("inStock")} · {product.unitType === "weight" ? "Gram/Kg" : "Packaged"}

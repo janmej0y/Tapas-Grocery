@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CreditCard, IndianRupee, Minus, Plus, RotateCcw, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { CreditCard, IndianRupee, LocateFixed, MapPin, Minus, Plus, RotateCcw, Trash2 } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import { useLanguage } from "@/components/language-provider";
@@ -9,6 +10,7 @@ import { useStore } from "@/components/store-provider";
 import { calculateDeliveryFee } from "@/lib/delivery";
 import { formatCurrency } from "@/lib/format";
 import { buildWhatsAppOrderUrl, downloadInvoice } from "@/lib/invoice";
+import { calculateDistanceKm, SHOP_LOCATION } from "@/lib/location";
 import { applyPromoCode } from "@/lib/promos";
 import type { Order, UserAddress } from "@/lib/types";
 import { formatCartItemName, getUnitPrice } from "@/lib/units";
@@ -53,6 +55,7 @@ export function CheckoutPanel() {
   const [appliedPromo, setAppliedPromo] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI");
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const subtotal = useMemo(
@@ -64,7 +67,8 @@ export function CheckoutPanel() {
   const delivery = calculateDeliveryFee(address.distanceKm, discountedSubtotal);
   const grandTotal = delivery.available ? discountedSubtotal + delivery.fee : discountedSubtotal;
   const isAddressComplete = validateAddress(address);
-  const canOrder = customer.isPhoneVerified && !customer.isBlocked && isAddressComplete && delivery.available && cart.length > 0;
+  const isCurrentPhoneVerified = customer.isPhoneVerified && phone.replace(/\D/g, "").slice(-10) === customer.phone;
+  const canOrder = isCurrentPhoneVerified && !customer.isBlocked && isAddressComplete && delivery.available && cart.length > 0;
 
   async function createPaymentOrder() {
     const response = await fetch("/api/payment/razorpay", {
@@ -86,7 +90,7 @@ export function CheckoutPanel() {
       return;
     }
 
-    if (!customer.isPhoneVerified) {
+    if (!isCurrentPhoneVerified) {
       toast.error("Please verify your phone number with OTP before ordering.");
       return;
     }
@@ -98,6 +102,12 @@ export function CheckoutPanel() {
 
     if (!delivery.available || cart.length === 0) {
       toast.error(delivery.available ? "Please add at least one cart item." : delivery.message);
+      return;
+    }
+
+    const unavailableItem = cart.find((item) => item.quantity > item.product.stock || item.product.stock <= 0);
+    if (unavailableItem) {
+      toast.error(`${unavailableItem.product.name} is out of stock or below requested quantity.`);
       return;
     }
 
@@ -124,6 +134,7 @@ export function CheckoutPanel() {
           items: cart.map((item) => ({
             productId: item.product.id,
             name: formatCartItemName(item.product.name, item.selectedUnit),
+            selectedUnit: item.selectedUnit,
             price: getUnitPrice(item.product.price, item.selectedUnit, item.product.variantPrices),
             quantity: item.quantity
           }))
@@ -212,8 +223,58 @@ export function CheckoutPanel() {
     }
   }
 
+  function detectLocation() {
+    if (!navigator.geolocation) {
+      toast.error("Location detection is not supported on this device.");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const nextLocation = {
+          latitude: Number(position.coords.latitude.toFixed(7)),
+          longitude: Number(position.coords.longitude.toFixed(7))
+        };
+        setAddress((current) => ({
+          ...current,
+          ...nextLocation,
+          distanceKm: calculateDistanceKm(nextLocation),
+          landmark: current.landmark || "Detected from current location"
+        }));
+        setIsLocating(false);
+        toast.success("Location detected");
+      },
+      () => {
+        setIsLocating(false);
+        toast.error("Could not detect location. Please allow location access or enter it manually.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  function updateManualLocation(key: "latitude" | "longitude", value: string) {
+    const nextValue = Number(value);
+
+    setAddress((current) => {
+      const nextAddress = {
+        ...current,
+        [key]: Number.isFinite(nextValue) ? nextValue : undefined
+      };
+
+      if (typeof nextAddress.latitude === "number" && typeof nextAddress.longitude === "number") {
+        nextAddress.distanceKm = calculateDistanceKm({
+          latitude: nextAddress.latitude,
+          longitude: nextAddress.longitude
+        });
+      }
+
+      return nextAddress;
+    });
+  }
+
   return (
-    <section id="cart" className="scroll-mt-24 bg-white py-14">
+    <section id="cart" className="scroll-mt-24 bg-white py-8 sm:py-10">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
         <div>
           <h2 className="text-3xl font-black text-ink">{t("cartTitle")}</h2>
@@ -275,7 +336,12 @@ export function CheckoutPanel() {
             <section id="phone-login" className="scroll-mt-24 rounded-lg border border-black/10 bg-leaf-50 p-4">
               <h3 className="font-black text-ink">Phone OTP Login</h3>
               <div className="mt-3 space-y-3">
-                <input value={phone} onChange={(event) => setPhone(event.target.value)} className="w-full rounded-md border border-black/10 bg-white px-3 py-2" placeholder="10 digit mobile number" />
+                <input
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  className="w-full rounded-md border border-black/10 bg-white px-3 py-2"
+                  placeholder="10 digit mobile number"
+                />
                 <div className="grid grid-cols-[1fr_auto] gap-2">
                   <input value={otp} onChange={(event) => setOtp(event.target.value)} className="min-w-0 rounded-md border border-black/10 bg-white px-3 py-2" placeholder="OTP" />
                   <button type="button" onClick={handleVerifyOtp} className="rounded-md bg-ink px-3 py-2 text-sm font-bold text-white hover:bg-leaf-700">
@@ -286,7 +352,13 @@ export function CheckoutPanel() {
                   Send OTP
                 </button>
                 <p className={`text-sm font-semibold ${customer.isPhoneVerified ? "text-leaf-700" : "text-ink/60"}`}>
-                  {customer.isBlocked ? "Blocked by admin" : customer.isPhoneVerified ? "Phone verified" : pendingOtp ? "OTP sent. Demo code is 123456." : "Phone verification required."}
+                  {customer.isBlocked
+                    ? "Blocked by admin"
+                    : customer.isPhoneVerified && phone.replace(/\D/g, "").slice(-10) === customer.phone
+                      ? "Phone verified. You can order anytime with this number."
+                      : pendingOtp
+                        ? "OTP sent. Demo code is 123456."
+                        : "Phone verification required only once."}
                 </p>
               </div>
             </section>
@@ -348,6 +420,63 @@ export function CheckoutPanel() {
               <AddressInput label="Pincode" value={address.pincode} onChange={(value) => setAddress((current) => ({ ...current, pincode: value }))} />
             </div>
             <AddressInput label="Landmark" value={address.landmark} onChange={(value) => setAddress((current) => ({ ...current, landmark: value }))} />
+            <div className="rounded-lg border border-black/10 bg-white p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="inline-flex items-center gap-2 text-sm font-black text-ink">
+                    <MapPin className="h-4 w-4 text-leaf-700" />
+                    Delivery location
+                  </p>
+                  <p className="mt-1 text-xs text-ink/60">Detect automatically or enter coordinates manually.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={detectLocation}
+                  className="inline-flex items-center gap-2 rounded-md bg-leaf-600 px-3 py-2 text-sm font-bold text-white hover:bg-leaf-700 disabled:bg-gray-300"
+                  disabled={isLocating}
+                >
+                  <LocateFixed className="h-4 w-4" />
+                  {isLocating ? "Detecting" : "Use current"}
+                </button>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="text-xs font-bold text-ink/70">Latitude</span>
+                  <input
+                    type="number"
+                    value={address.latitude ?? ""}
+                    onChange={(event) => updateManualLocation("latitude", event.target.value)}
+                    className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                    placeholder="22.5726"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold text-ink/70">Longitude</span>
+                  <input
+                    type="number"
+                    value={address.longitude ?? ""}
+                    onChange={(event) => updateManualLocation("longitude", event.target.value)}
+                    className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                    placeholder="88.3639"
+                  />
+                </label>
+              </div>
+              <div className="mt-3 overflow-hidden rounded-lg border border-black/10">
+                <iframe
+                  title="Delivery location map"
+                  src={googleMapUrl(address.latitude, address.longitude)}
+                  className="h-56 w-full"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-ink/65">
+                <span>Shop: {SHOP_LOCATION.latitude}, {SHOP_LOCATION.longitude}</span>
+                <a href={googleMapsExternalUrl(address.latitude, address.longitude)} target="_blank" rel="noreferrer" className="text-leaf-700 hover:underline">
+                  Open in Google Maps
+                </a>
+              </div>
+            </div>
             <label className="block">
               <span className="text-sm font-bold text-ink">{t("distance")}</span>
               <input type="number" min="0" step="0.1" value={address.distanceKm} onChange={(event) => setAddress((current) => ({ ...current, distanceKm: Number(event.target.value) }))} className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2" />
@@ -415,6 +544,9 @@ export function CheckoutPanel() {
                 <a href={buildWhatsAppOrderUrl(placedOrder)} target="_blank" rel="noreferrer" className="rounded-md bg-leaf-600 px-3 py-2 text-center text-sm font-bold text-white hover:bg-leaf-700">
                   WhatsApp confirmation
                 </a>
+                <Link href={`/orders/${placedOrder.order_id}`} className="rounded-md bg-ink px-3 py-2 text-center text-sm font-bold text-white hover:bg-leaf-700 sm:col-span-2">
+                  Track order
+                </Link>
               </div>
             </div>
           ) : null}
@@ -440,6 +572,16 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
       <dd className="font-bold">{value}</dd>
     </div>
   );
+}
+
+function googleMapUrl(latitude?: number, longitude?: number) {
+  const query = typeof latitude === "number" && typeof longitude === "number" ? `${latitude},${longitude}` : `${SHOP_LOCATION.latitude},${SHOP_LOCATION.longitude}`;
+  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=16&output=embed`;
+}
+
+function googleMapsExternalUrl(latitude?: number, longitude?: number) {
+  const query = typeof latitude === "number" && typeof longitude === "number" ? `${latitude},${longitude}` : `${SHOP_LOCATION.latitude},${SHOP_LOCATION.longitude}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
 function validateAddress(address: UserAddress) {

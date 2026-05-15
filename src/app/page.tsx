@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Fuse from "fuse.js";
-import { ArrowDown, BookOpen, Flower2, Search, ShoppingBag, ShoppingCart } from "lucide-react";
+import { ArrowDown, BookOpen, Flower2, Mic, PackagePlus, Search, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import { AiAssistant } from "@/components/ai-assistant";
-import { CheckoutPanel } from "@/components/checkout-panel";
 import { useLanguage } from "@/components/language-provider";
 import { ProductCard } from "@/components/product-card";
 import { useStore } from "@/components/store-provider";
@@ -20,7 +19,7 @@ const categoryIcons = {
 
 export default function HomePage() {
   const { t } = useLanguage();
-  const { products } = useStore();
+  const { addToCart, products } = useStore();
   const [activeFilter, setActiveFilter] = useState<ProductCategory | "all">("all");
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
@@ -54,6 +53,23 @@ export default function HomePage() {
       );
     });
   }, [activeFilter, brand, maxPrice, minPrice, preference, products, query]);
+
+  function startVoiceSearch() {
+    const browserWindow = window as Window & typeof globalThis & {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const Recognition = browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognition.lang = "en-IN";
+    recognition.onresult = (event) => setQuery(event.results[0]?.[0]?.transcript ?? "");
+    recognition.start();
+  }
 
   return (
     <main>
@@ -107,24 +123,14 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div id="product-tools" className="sticky top-[73px] z-30 mt-6 scroll-mt-24 rounded-lg border border-black/10 bg-white p-4 shadow-sm">
-          <div className="mb-4 grid gap-3 border-b border-black/10 pb-4 md:grid-cols-3">
-            <a href="#categories" className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 text-sm font-bold text-white hover:bg-leaf-700">
-              <ShoppingBag className="h-4 w-4" />
-              Browse products
-            </a>
-            <a href="#cart" className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 text-sm font-bold text-white hover:bg-leaf-700">
-              <ShoppingCart className="h-4 w-4" />
-              Cart & checkout
-            </a>
-            <a href="#phone-login" className="inline-flex items-center justify-center gap-2 rounded-md border border-black/10 bg-white px-4 py-3 text-sm font-bold text-ink hover:bg-leaf-50">
-              Phone login
-            </a>
-          </div>
+        <div id="product-tools" className="mt-6 scroll-mt-24 rounded-xl border border-black/10 bg-white p-3 shadow-sm lg:sticky lg:top-[73px] lg:z-30 lg:p-4">
           <div className="grid gap-3 md:grid-cols-[1.4fr_repeat(4,1fr)]">
             <label className="relative block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
               <input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full rounded-md border border-black/10 py-2 pl-9 pr-3" placeholder={`${t("search")}...`} />
+              <button type="button" onClick={startVoiceSearch} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-ink/55 hover:bg-leaf-50" aria-label="Voice search">
+                <Mic className="h-4 w-4" />
+              </button>
             </label>
             <FilterSelect label={t("brand")} value={brand} onChange={setBrand} options={brands} />
             <FilterSelect label={t("preference")} value={preference} onChange={setPreference} options={preferences} />
@@ -140,13 +146,54 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+        <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="rounded-md bg-marigold/20 p-2 text-ink">
+              <PackagePlus className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-2xl font-black text-ink">Popular combos</h2>
+              <p className="text-sm text-ink/65">Quick add weekly baskets for regular local shopping.</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {[
+              { title: "Tea-time combo", ids: ["p-102", "p-103"] },
+              { title: "Rice essentials", ids: ["p-101", "p-102"] },
+              { title: "School ready pack", ids: ["p-201", "p-202"] }
+            ].map((combo) => (
+              <button
+                key={combo.title}
+                type="button"
+                onClick={() => {
+                  combo.ids
+                    .map((id) => products.find((product) => product.id === id))
+                    .filter(Boolean)
+                    .forEach((product) => addToCart(product!, product!.unitOptions[0], 1));
+                }}
+                className="rounded-lg border border-black/10 bg-leaf-50 p-4 text-left font-bold hover:bg-leaf-100"
+              >
+                {combo.title}
+                <span className="mt-1 block text-sm font-semibold text-ink/60">Add combo to cart</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <div id="assistant" className="scroll-mt-24">
         <AiAssistant />
       </div>
-      <CheckoutPanel />
     </main>
   );
 }
+
+type SpeechRecognitionLike = {
+  lang: string;
+  onresult: (event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
+  start: () => void;
+};
 
 function FilterSelect({ label, onChange, options, value }: { label: string; onChange: (value: string) => void; options: string[]; value: string }) {
   return (
