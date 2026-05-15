@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { AlertTriangle, Ban, Download, Edit3, Eye, FileText, History, IndianRupee, LayoutDashboard, MessageCircle, PackagePlus, Save, Trash2, Truck, Undo2, Upload, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -53,8 +53,6 @@ export default function AdminPage() {
     updateRefundStatus,
     importProducts
   } = useStore();
-  const [email, setEmail] = useState("admin@tapas.local");
-  const [password, setPassword] = useState("");
   const [adminPhone, setAdminPhone] = useState(ADMIN_PHONE);
   const [adminOtp, setAdminOtp] = useState("");
   const [form, setForm] = useState<Omit<Product, "id">>(emptyProduct);
@@ -84,21 +82,6 @@ export default function AdminPage() {
     window.addEventListener("tapas:new-order", onNewOrder);
     return () => window.removeEventListener("tapas:new-order", onNewOrder);
   }, []);
-
-  async function login() {
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false
-    });
-
-    if (result?.error) {
-      toast.error("Invalid admin credentials");
-      return;
-    }
-
-    toast.success("Admin signed in");
-  }
 
   async function sendAdminOtp() {
     if (!isAdminPhone(adminPhone)) {
@@ -306,7 +289,7 @@ export default function AdminPage() {
       <main className="mx-auto grid min-h-[calc(100vh-73px)] max-w-md place-items-center px-4 py-12">
         <section className="w-full rounded-lg border border-black/10 bg-white p-6 shadow-soft">
           <h1 className="text-3xl font-black text-ink">{t("adminLogin")}</h1>
-          <p className="mt-2 text-sm text-ink/65">Owner phone {ADMIN_PHONE} can unlock the full dashboard after OTP verification.</p>
+          <p className="mt-2 text-sm text-ink/65">Use owner mobile OTP to unlock the full dashboard. Verification is remembered for 30 days on this device.</p>
           <div className="mt-6 rounded-lg border border-leaf-100 bg-leaf-50 p-4">
             <h2 className="font-black text-ink">Owner phone login</h2>
             <label className="mt-4 block">
@@ -341,33 +324,6 @@ export default function AdminPage() {
             </button>
             <p className="mt-2 text-xs text-ink/60">Local demo OTP: 123456. With Supabase configured, the code is sent to this phone.</p>
           </div>
-          <div className="my-6 border-t border-black/10" />
-          <p className="text-sm text-ink/65">You can also use the existing NextAuth owner password login.</p>
-          <label className="mt-6 block">
-            <span className="text-sm font-bold">Email</span>
-            <input value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2" />
-          </label>
-          <label className="mt-4 block">
-            <span className="text-sm font-bold">{t("password")}</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  login();
-                }
-              }}
-              className="mt-2 w-full rounded-md border border-black/10 px-3 py-2"
-            />
-          </label>
-          <button type="button" onClick={login} className="mt-5 w-full rounded-md bg-ink px-4 py-3 font-bold text-white hover:bg-leaf-700">
-            {t("login")}
-          </button>
-          <button type="button" onClick={() => signIn("google")} className="mt-3 w-full rounded-md border border-black/10 bg-white px-4 py-3 font-bold hover:bg-leaf-50">
-            Continue with Google
-          </button>
-          <p className="mt-3 text-xs text-ink/55">Demo credentials: admin@tapas.local / tapadmin123</p>
         </section>
       </main>
     );
@@ -556,9 +512,7 @@ export default function AdminPage() {
             <label className="block">
               <span className="text-sm font-bold">{t("category")}</span>
               <select value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value as ProductCategory }))} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2">
-                <option value="grocery">{t("grocery")}</option>
-                <option value="books">{t("books")}</option>
-                <option value="cosmetics">{t("cosmetics")}</option>
+                <option value="grocery">Grocery Items</option>
               </select>
             </label>
             <AdminInput label={t("brand")} value={form.brand} onChange={(value) => setForm((current) => ({ ...current, brand: value }))} />

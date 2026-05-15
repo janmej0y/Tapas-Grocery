@@ -2,25 +2,16 @@
 
 import { useMemo, useState } from "react";
 import Fuse from "fuse.js";
-import { ArrowDown, BookOpen, Flower2, Mic, PackagePlus, Search, ShoppingBag } from "lucide-react";
+import { ArrowDown, Mic, PackagePlus, Search, ShoppingBag, Tags } from "lucide-react";
 import Image from "next/image";
 import { AiAssistant } from "@/components/ai-assistant";
 import { useLanguage } from "@/components/language-provider";
 import { ProductCard } from "@/components/product-card";
 import { useStore } from "@/components/store-provider";
-import type { ProductCategory } from "@/lib/types";
-
-const filters: Array<ProductCategory | "all"> = ["all", "grocery", "books", "cosmetics"];
-const categoryIcons = {
-  grocery: ShoppingBag,
-  books: BookOpen,
-  cosmetics: Flower2
-};
-
 export default function HomePage() {
   const { t } = useLanguage();
   const { addToCart, products } = useStore();
-  const [activeFilter, setActiveFilter] = useState<ProductCategory | "all">("all");
+  const [activeFilter, setActiveFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
   const [preference, setPreference] = useState("all");
@@ -29,9 +20,10 @@ export default function HomePage() {
 
   const brands = useMemo(() => Array.from(new Set(products.map((product) => product.brand))).sort(), [products]);
   const preferences = useMemo(() => Array.from(new Set(products.flatMap((product) => product.dietary))).sort(), [products]);
+  const filters = useMemo(() => ["all", ...brands], [brands]);
 
   const filteredProducts = useMemo(() => {
-    const baseProducts = activeFilter === "all" ? products : products.filter((product) => product.category === activeFilter);
+    const baseProducts = activeFilter === "all" ? products : products.filter((product) => product.brand === activeFilter);
     const searchResults = query.trim()
       ? new Fuse(baseProducts, {
           keys: ["name", "category", "brand", "dietary"],
@@ -105,7 +97,7 @@ export default function HomePage() {
           </div>
           <div className="flex flex-wrap gap-2">
             {filters.map((filter) => {
-              const Icon = filter === "all" ? ShoppingBag : categoryIcons[filter];
+              const Icon = filter === "all" ? ShoppingBag : Tags;
               return (
                 <button
                   key={filter}
@@ -116,7 +108,7 @@ export default function HomePage() {
                   }`}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
-                  {filter === "all" ? t("all") : t(filter)}
+                  {filter === "all" ? t("all") : filter}
                 </button>
               );
             })}
@@ -160,8 +152,8 @@ export default function HomePage() {
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {[
               { title: "Tea-time combo", ids: ["p-102", "p-103"] },
-              { title: "Rice essentials", ids: ["p-101", "p-102"] },
-              { title: "School ready pack", ids: ["p-201", "p-202"] }
+              { title: "Spice essentials", ids: ["p-103", "p-104", "p-105", "p-106"] },
+              { title: "Monthly home care", ids: ["p-116", "p-117", "p-118"] }
             ].map((combo) => (
               <button
                 key={combo.title}

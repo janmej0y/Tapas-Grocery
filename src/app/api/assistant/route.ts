@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 
   if (lower.includes("recipe")) {
     return NextResponse.json({
-      answer: "Try a quick rice bowl with Gobindobhog Rice, mustard oil tempering, and masala tea on the side. I can also help pick items from the current catalog."
+      answer: "Try a quick snack combo with Instant Noodles, Soup Mix, and a little Black Pepper. I can also help pick items from the current catalog."
     });
   }
 

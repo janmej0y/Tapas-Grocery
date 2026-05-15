@@ -53,6 +53,7 @@ type StoreContextValue = {
 const StoreContext = createContext<StoreContextValue | null>(null);
 const STORAGE_KEY = "tapas-grocery-store-state-v2";
 const VERIFIED_PHONE_KEY = "tapas-verified-phone";
+const VERIFIED_PHONE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -73,7 +74,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     try {
       const parsed = JSON.parse(stored) as StoredState;
-      const verifiedPhone = window.localStorage.getItem(VERIFIED_PHONE_KEY);
+      const verifiedPhone = getRememberedVerifiedPhone();
       setCart(parsed.cart ?? []);
       setProducts(parsed.products ?? initialProducts);
       setOrders(parsed.orders ?? initialOrders);
@@ -147,7 +148,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             isBlocked: false,
             addresses: current.addresses.map((address) => ({ ...address, phone: pendingPhone }))
           }));
-          window.localStorage.setItem(VERIFIED_PHONE_KEY, pendingPhone);
+          rememberVerifiedPhone(pendingPhone);
           setPendingOtp("");
         }
 
@@ -162,7 +163,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           isBlocked: blockedPhones.includes(normalizedPhone),
           addresses: current.addresses.map((address) => ({ ...address, phone: normalizedPhone }))
         }));
-        window.localStorage.setItem(VERIFIED_PHONE_KEY, normalizedPhone);
+        rememberVerifiedPhone(normalizedPhone);
         setPendingOtp("");
       },
       logoutCustomer: () => {
@@ -426,6 +427,40 @@ export function useStore() {
 
 function normalizePhone(phone: string) {
   return normalizeLocalPhone(phone);
+}
+
+function rememberVerifiedPhone(phone: string) {
+  window.localStorage.setItem(
+    VERIFIED_PHONE_KEY,
+    JSON.stringify({
+      phone,
+      expiresAt: Date.now() + VERIFIED_PHONE_TTL_MS
+    })
+  );
+}
+
+function getRememberedVerifiedPhone() {
+  const stored = window.localStorage.getItem(VERIFIED_PHONE_KEY);
+
+  if (!stored) {
+    return "";
+  }
+
+  try {
+    const parsed = JSON.parse(stored) as { phone?: string; expiresAt?: number };
+
+    if (parsed.phone && parsed.expiresAt && parsed.expiresAt > Date.now()) {
+      return parsed.phone;
+    }
+  } catch {
+    if (/^\d{10}$/.test(stored)) {
+      rememberVerifiedPhone(stored);
+      return stored;
+    }
+  }
+
+  window.localStorage.removeItem(VERIFIED_PHONE_KEY);
+  return "";
 }
 
 function getCartLineKey(productId: string, selectedUnit: string) {

@@ -18,7 +18,7 @@ const bengali = Noto_Sans_Bengali({
 
 export const metadata: Metadata = {
   title: "Tapas Grocery Store",
-  description: "A modern local e-commerce app for groceries, books, and cosmetics.",
+  description: "A modern local e-commerce app for groceries and household essentials.",
   manifest: "/manifest.webmanifest"
 };
 
