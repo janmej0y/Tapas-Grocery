@@ -3,37 +3,6 @@
 
 create extension if not exists pgcrypto;
 
-create or replace function public.current_user_role()
-returns text
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select coalesce(
-    (select role from public.customer_profiles where id = auth.uid()),
-    'customer'
-  );
-$$;
-
-create or replace function public.is_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.customer_profiles
-    where id = auth.uid()
-      and (
-        role = 'admin'
-        or phone = '7477661933'
-      )
-  );
-$$;
-
 create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -163,6 +132,37 @@ create table if not exists public.admin_activity_log (
   details text not null,
   created_at timestamptz not null default now()
 );
+
+create or replace function public.current_user_role()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select role from public.customer_profiles where id = auth.uid()),
+    'customer'
+  );
+$$;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.customer_profiles
+    where id = auth.uid()
+      and (
+        role = 'admin'
+        or phone = '7477661933'
+      )
+  );
+$$;
 
 create index if not exists products_category_idx on public.products(category);
 create index if not exists products_brand_idx on public.products(brand);
