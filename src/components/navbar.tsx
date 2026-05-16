@@ -9,6 +9,7 @@ import {
   LockKeyhole,
   LogOut,
   Menu,
+  MoreHorizontal,
   ShieldCheck,
   Search,
   ShoppingCart,
@@ -32,6 +33,7 @@ const menuItems = [
   { href: "/account", icon: UserRound, label: "Account & Orders" },
   { href: "/cart", icon: ShoppingCart, label: "Cart & Checkout" },
   { href: "/policies", icon: ShieldCheck, label: "Policies" },
+  { href: "/more", icon: MoreHorizontal, label: "More" },
   { href: "/admin", icon: LockKeyhole, label: "Admin" }
 ];
 

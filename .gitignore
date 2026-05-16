@@ -1,10 +1,56 @@
-.next
-node_modules
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Production/build output
+dist/
+build/
+coverage/
+
+# Logs
+*.log
 devserver.*.log
-.env
-.env*.local
-supabase/.branches
-supabase/.temp
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Supabase local state
+supabase/.branches/
+supabase/.temp/
+
+# Android / Bubblewrap generated project
+android-twa/
+
+# Android signing secrets and generated packages
+*.keystore
+*.jks
+*.p12
+*.idsig
+app-release*.apk
+app-release*.aab
+*-release*.apk
+*-release*.aab
+
+# Keep the public APK downloadable from the website only if you intentionally want to publish it.
+!public/downloads/
+!public/downloads/.gitkeep
+!public/downloads/tapas-grocery.apk
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+
+# TypeScript
+*.tsbuildinfo

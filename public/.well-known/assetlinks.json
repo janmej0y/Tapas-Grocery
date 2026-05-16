@@ -1,0 +1,12 @@
+﻿[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tapasgrocery.store",
+      "sha256_cert_fingerprints": [
+        "8E:AF:21:BC:24:E7:57:2A:86:BD:63:6C:64:49:77:37:4F:9A:4F:07:FD:25:66:CD:E9:8C:55:33:4F:15:58:FA"
+      ]
+    }
+  }
+]

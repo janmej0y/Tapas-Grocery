@@ -245,6 +245,16 @@ Before deployment:
 5. Create/verify the `product-images` Supabase Storage bucket
 6. Set `NEXTAUTH_URL` to your production domain
 
+## 🤖 Android APK
+
+This project can be packaged as an Android APK/AAB from the PWA using PWABuilder or Bubblewrap.
+
+Guide:
+
+```text
+docs/ANDROID_APK.md
+```
+
 ## ❤️ Purpose
 
 This project was created for my personal grocery business so customers can order local grocery items more easily, and so I can manage products, orders, delivery time, users, and inventory from one dashboard.
