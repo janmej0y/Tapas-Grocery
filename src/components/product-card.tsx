@@ -47,13 +47,13 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm">
       <button type="button" onClick={() => setIsChoosing((value) => !value)} className="block w-full text-left" aria-label={`Choose ${displayName}`}>
-        <div className="aspect-[4/3] overflow-hidden bg-leaf-50">
+        <div className="aspect-[4/3] overflow-hidden bg-white p-3">
           <Image
             src={product.image_url}
             alt={displayName}
             width={640}
             height={480}
-            className="h-full w-full object-cover transition duration-300 hover:scale-105"
+            className="h-full w-full object-contain transition duration-300 hover:scale-[1.03]"
           />
         </div>
       </button>

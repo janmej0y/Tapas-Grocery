@@ -46,8 +46,8 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
       </Link>
 
       <section className="mt-6 grid gap-8 lg:grid-cols-[1fr_0.85fr]">
-        <div className="overflow-hidden rounded-lg border border-black/10 bg-leaf-50">
-          <Image src={product.image_url} alt={product.name} width={1100} height={820} priority className="aspect-[4/3] w-full object-cover" />
+        <div className="overflow-hidden rounded-lg border border-black/10 bg-white p-4">
+          <Image src={product.image_url} alt={product.name} width={1100} height={820} priority className="aspect-[4/3] w-full object-contain" />
         </div>
         <div>
           <div className="flex items-start justify-between gap-4">

@@ -254,7 +254,7 @@ export function CheckoutPanel() {
               <div className="divide-y divide-black/10">
                 {cart.map((item) => (
                   <div key={`${item.product.id}-${item.selectedUnit}`} className="grid gap-4 p-4 sm:grid-cols-[72px_1fr_auto] sm:items-center">
-                    <Image src={item.product.image_url} alt={item.product.name} width={80} height={80} className="aspect-square rounded-md object-cover" />
+                    <Image src={item.product.image_url} alt={item.product.name} width={80} height={80} className="aspect-square rounded-md bg-white object-contain p-1" />
                     <div>
                       <h3 className="font-bold text-ink">{formatCartItemName(productName(item.product.name), item.selectedUnit)}</h3>
                       <p className="text-sm text-ink/65">{formatCurrency(getUnitPrice(item.product.price, item.selectedUnit, item.product.variantPrices))}</p>
