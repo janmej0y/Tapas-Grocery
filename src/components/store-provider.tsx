@@ -24,7 +24,6 @@ type StoreContextValue = {
   activityLog: AdminActivity[];
   agents: DeliveryAgent[];
   lowStockProducts: Product[];
-  markPhoneVerified: (phone: string) => void;
   logoutCustomer: () => void;
   updateCustomerAddress: (address: UserAddress) => void;
   toggleFavoriteProduct: (productId: string) => void;
@@ -49,9 +48,6 @@ type StoreContextValue = {
 
 const StoreContext = createContext<StoreContextValue | null>(null);
 const STORAGE_KEY = "tapas-grocery-store-state-v2";
-const VERIFIED_PHONE_KEY = "tapas-verified-phone";
-const VERIFIED_PHONE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -69,14 +65,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     try {
       const parsed = JSON.parse(stored) as StoredState;
-      const verifiedPhone = getRememberedVerifiedPhone();
       setCart(parsed.cart ?? []);
       setProducts(parsed.products ?? initialProducts);
       setOrders(parsed.orders ?? initialOrders);
       setCustomer({
         ...(parsed.customer ?? defaultCustomer),
-        favoriteProductIds: (parsed.customer ?? defaultCustomer).favoriteProductIds ?? [],
-        isPhoneVerified: Boolean(verifiedPhone && verifiedPhone === (parsed.customer ?? defaultCustomer).phone)
+        favoriteProductIds: (parsed.customer ?? defaultCustomer).favoriteProductIds ?? []
       });
       setBlockedPhones(parsed.blockedPhones ?? []);
       setActivityLog(parsed.activityLog ?? []);
@@ -118,20 +112,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       activityLog,
       agents: deliveryAgents,
       lowStockProducts,
-      markPhoneVerified: (phone) => {
-        const normalizedPhone = normalizePhone(phone);
-        setCustomer((current) => ({
-          ...current,
-          phone: normalizedPhone,
-          isPhoneVerified: true,
-          isBlocked: blockedPhones.includes(normalizedPhone),
-          addresses: current.addresses.map((address) => ({ ...address, phone: normalizedPhone }))
-        }));
-        rememberVerifiedPhone(normalizedPhone);
-      },
       logoutCustomer: () => {
-        setCustomer((current) => ({ ...current, isPhoneVerified: false }));
-        window.localStorage.removeItem(VERIFIED_PHONE_KEY);
         setCart([]);
       },
       updateCustomerAddress: (address) => {
@@ -171,7 +152,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         setBlockedPhones((items) => Array.from(new Set([...items, normalizedPhone])));
         setCustomer((current) =>
-          current.phone === normalizedPhone ? { ...current, isBlocked: true, isPhoneVerified: false } : current
+          current.phone === normalizedPhone ? { ...current, isBlocked: true } : current
         );
         pushActivity(setActivityLog, "User blocked", `Phone ${normalizedPhone} was blocked`);
         fetch("/api/users/block", {
@@ -390,40 +371,6 @@ export function useStore() {
 
 function normalizePhone(phone: string) {
   return normalizeLocalPhone(phone);
-}
-
-function rememberVerifiedPhone(phone: string) {
-  window.localStorage.setItem(
-    VERIFIED_PHONE_KEY,
-    JSON.stringify({
-      phone,
-      expiresAt: Date.now() + VERIFIED_PHONE_TTL_MS
-    })
-  );
-}
-
-function getRememberedVerifiedPhone() {
-  const stored = window.localStorage.getItem(VERIFIED_PHONE_KEY);
-
-  if (!stored) {
-    return "";
-  }
-
-  try {
-    const parsed = JSON.parse(stored) as { phone?: string; expiresAt?: number };
-
-    if (parsed.phone && parsed.expiresAt && parsed.expiresAt > Date.now()) {
-      return parsed.phone;
-    }
-  } catch {
-    if (/^\d{10}$/.test(stored)) {
-      rememberVerifiedPhone(stored);
-      return stored;
-    }
-  }
-
-  window.localStorage.removeItem(VERIFIED_PHONE_KEY);
-  return "";
 }
 
 function getCartLineKey(productId: string, selectedUnit: string) {

@@ -17,7 +17,7 @@ export default function AccountPage() {
       <div>
         <p className="text-sm font-black uppercase tracking-[0.16em] text-leaf-700">Account</p>
         <h1 className="mt-2 text-4xl font-black text-ink">{customer.name}</h1>
-        <p className="mt-2 text-ink/65">{customer.isPhoneVerified ? `Verified phone: ${customer.phone}` : "Verify your phone at checkout to place orders."}</p>
+        <p className="mt-2 text-ink/65">Saved addresses, favorites, and order history for this device.</p>
       </div>
 
       <section className="mt-8 grid gap-4 lg:grid-cols-3">

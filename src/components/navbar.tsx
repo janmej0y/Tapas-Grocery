@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Bot,
   Home,
@@ -18,10 +19,12 @@ import {
   UserRoundCheck,
   X
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { useLanguage } from "@/components/language-provider";
 import { useStore } from "@/components/store-provider";
 import { formatCurrency } from "@/lib/format";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getUnitPrice } from "@/lib/units";
 
 const menuItems = [
@@ -39,13 +42,33 @@ const menuItems = [
 
 export function Navbar() {
   const { t, toggleLanguage } = useLanguage();
-  const { cart, customer, logoutCustomer } = useStore();
+  const { cart, logoutCustomer } = useStore();
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const supabase = createSupabaseBrowserClient();
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const cartTotal = cart.reduce(
     (total, item) => total + getUnitPrice(item.product.price, item.selectedUnit, item.product.variantPrices) * item.quantity,
     0
   );
+  const isCartPage = pathname === "/cart";
+
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
+    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
+    return () => listener.subscription.unsubscribe();
+  }, [supabase]);
+
+  async function handleLogout() {
+    await supabase?.auth.signOut();
+    logoutCustomer();
+    setIsMenuOpen(false);
+  }
 
   return (
     <>
@@ -92,7 +115,7 @@ export function Navbar() {
             </Link>
             <Link href="/login" className="hidden items-center gap-2 rounded-md border border-black/10 px-3 py-2 text-sm font-semibold hover:bg-leaf-50 md:inline-flex">
               <UserRoundCheck className="h-4 w-4" aria-hidden="true" />
-              {customer.isPhoneVerified ? "Account" : "Login"}
+              {user ? "Account" : "Login"}
             </Link>
           </div>
         </nav>
@@ -126,8 +149,8 @@ export function Navbar() {
             <div className="p-4">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-ink/45">Menu</p>
               <div className="mt-3 rounded-lg bg-leaf-50 p-3">
-                <p className="text-sm font-black text-ink">{customer.isPhoneVerified ? "Logged in" : "Not logged in"}</p>
-                <p className="mt-1 text-sm text-ink/60">{customer.isPhoneVerified ? customer.phone : "Login with mobile OTP to order faster."}</p>
+                <p className="text-sm font-black text-ink">{user ? "Logged in" : "Not logged in"}</p>
+                <p className="mt-1 truncate text-sm text-ink/60">{user?.email ?? "Use email or Google login for your account."}</p>
               </div>
               <div className="mt-3 grid gap-2">
                 {menuItems.map((item) => {
@@ -149,13 +172,10 @@ export function Navbar() {
                     </Link>
                   );
                 })}
-                {customer.isPhoneVerified ? (
+                {user ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      logoutCustomer();
-                      setIsMenuOpen(false);
-                    }}
+                    onClick={handleLogout}
                     className="flex items-center justify-between rounded-lg border border-red-200 bg-white p-3 font-bold text-red-700 hover:bg-red-50"
                   >
                     <span className="inline-flex items-center gap-3">
@@ -170,7 +190,7 @@ export function Navbar() {
         </div>
       ) : null}
 
-      {cartCount > 0 ? (
+      {cartCount > 0 && !isCartPage ? (
         <Link
           href="/cart"
           className="fixed bottom-4 left-4 right-4 z-40 inline-flex items-center justify-between rounded-2xl bg-[#16a56c] px-5 py-4 font-black text-white shadow-soft hover:bg-leaf-700 sm:left-auto sm:right-6 sm:w-80"

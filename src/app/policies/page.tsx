@@ -9,11 +9,11 @@ const policies = [
   },
   {
     title: "Privacy Policy",
-    body: "Customer phone numbers, addresses, order history, and location coordinates are used only for login, delivery, support, and order management."
+    body: "Customer phone numbers, addresses, order history, and location coordinates are used only for delivery, support, and order management."
   },
   {
     title: "Terms of Use",
-    body: "Orders depend on product availability, delivery area, verified phone login, and a complete delivery address."
+    body: "Orders depend on product availability, delivery area, a valid mobile number, and a complete delivery address."
   }
 ];
 

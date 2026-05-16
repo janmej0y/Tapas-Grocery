@@ -8,8 +8,7 @@ import toast from "react-hot-toast";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useLanguage } from "@/components/language-provider";
 import { useStore } from "@/components/store-provider";
-import { useOtpCooldown } from "@/hooks/use-otp-cooldown";
-import { ADMIN_PHONE, isAdminPhone } from "@/lib/admin-access";
+import { ADMIN_PHONE } from "@/lib/admin-access";
 import { formatCurrency } from "@/lib/format";
 import { buildWhatsAppOrderUrl, downloadInvoice } from "@/lib/invoice";
 import type { Order, Product, ProductCategory } from "@/lib/types";
@@ -39,11 +38,8 @@ export default function AdminPage() {
     assignDeliveryAgent,
     blockPhone,
     blockedPhones,
-    customer,
     deleteProduct,
-    logoutCustomer,
     lowStockProducts,
-    markPhoneVerified,
     orders,
     products,
     unblockPhone,
@@ -53,8 +49,6 @@ export default function AdminPage() {
     updateRefundStatus,
     importProducts
   } = useStore();
-  const [adminPhone, setAdminPhone] = useState(ADMIN_PHONE);
-  const [adminOtp, setAdminOtp] = useState("");
   const [form, setForm] = useState<Omit<Product, "id">>(emptyProduct);
   const [dietaryText, setDietaryText] = useState("");
   const [unitOptionsText, setUnitOptionsText] = useState("1 pack");
@@ -64,10 +58,8 @@ export default function AdminPage() {
   const [etaText, setEtaText] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const { isOtpCoolingDown, otpCooldown, startOtpCooldown } = useOtpCooldown();
 
-  const isOwnerPhoneAdmin = customer.isPhoneVerified && isAdminPhone(customer.phone) && !customer.isBlocked;
-  const isAdmin = session?.user?.role === "admin" || isOwnerPhoneAdmin;
+  const isAdmin = session?.user?.role === "admin";
   const revenue = useMemo(() => orders.reduce((total, order) => total + order.total_amount, 0), [orders]);
   const dailyRevenue = useMemo(() => buildDailyRevenue(orders), [orders]);
   const topSelling = useMemo(() => buildTopSelling(orders), [orders]);
@@ -84,72 +76,9 @@ export default function AdminPage() {
     return () => window.removeEventListener("tapas:new-order", onNewOrder);
   }, []);
 
-  async function sendAdminOtp() {
-    if (isOtpCoolingDown) {
-      toast.error(`Please wait ${otpCooldown} seconds before requesting another OTP.`);
-      return;
-    }
-
-    if (!isAdminPhone(adminPhone)) {
-      toast.error("Only the owner mobile number can unlock the dashboard.");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/otp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: adminPhone })
-      });
-      const data = (await response.json()) as { provider?: string; error?: string; retryAfterSeconds?: number };
-
-      if (!response.ok) {
-        if (typeof data.retryAfterSeconds === "number") {
-          startOtpCooldown(data.retryAfterSeconds);
-        }
-        throw new Error(data.error ?? "OTP could not be sent.");
-      }
-
-      startOtpCooldown(60);
-      toast.success("Owner OTP sent by Supabase");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "OTP could not be sent.");
-    }
-  }
-
-  async function verifyAdminOtp() {
-    if (!isAdminPhone(adminPhone)) {
-      toast.error("Only the owner mobile number can unlock the dashboard.");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/otp/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: adminPhone, token: adminOtp })
-      });
-      const data = (await response.json()) as { provider?: string; error?: string; role?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Invalid OTP.");
-      }
-
-      if (data.role !== "admin") {
-        throw new Error("This phone number is not allowed to access the dashboard.");
-      }
-
-      markPhoneVerified(adminPhone);
-      setAdminOtp("");
-      toast.success("Owner phone verified. Dashboard unlocked.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Invalid OTP.");
-    }
-  }
-
   async function enablePushNotifications() {
-    if (!isOwnerPhoneAdmin) {
-      toast.error("Verify the owner phone before enabling notifications.");
+    if (!isAdmin) {
+      toast.error("Login as admin before enabling notifications.");
       return;
     }
 
@@ -186,7 +115,7 @@ export default function AdminPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: customer.phone,
+          phone: ADMIN_PHONE,
           subscription
         })
       });
@@ -341,7 +270,7 @@ export default function AdminPage() {
     }
   }
 
-  if (status === "loading" && !isOwnerPhoneAdmin) {
+  if (status === "loading") {
     return <main className="mx-auto max-w-7xl px-4 py-10">Loading secure session...</main>;
   }
 
@@ -350,46 +279,10 @@ export default function AdminPage() {
       <main className="mx-auto grid min-h-[calc(100vh-73px)] max-w-md place-items-center px-4 py-12">
         <section className="w-full rounded-lg border border-black/10 bg-white p-6 shadow-soft">
           <h1 className="text-3xl font-black text-ink">{t("adminLogin")}</h1>
-          <p className="mt-2 text-sm text-ink/65">Use owner mobile OTP to unlock the full dashboard. Verification is remembered for 30 days on this device.</p>
-          <div className="mt-6 rounded-lg border border-leaf-100 bg-leaf-50 p-4">
-            <h2 className="font-black text-ink">Owner phone login</h2>
-            <label className="mt-4 block">
-              <span className="text-sm font-bold">Owner mobile number</span>
-              <input
-                value={adminPhone}
-                onChange={(event) => setAdminPhone(event.target.value)}
-                className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2"
-                inputMode="tel"
-                placeholder={ADMIN_PHONE}
-              />
-            </label>
-            <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-              <input
-                value={adminOtp}
-                onChange={(event) => setAdminOtp(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    verifyAdminOtp();
-                  }
-                }}
-                className="min-w-0 rounded-md border border-black/10 bg-white px-3 py-2"
-                inputMode="numeric"
-                placeholder="OTP"
-              />
-              <button
-                type="button"
-                onClick={sendAdminOtp}
-                disabled={isOtpCoolingDown}
-                className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-leaf-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-ink/45"
-              >
-                {isOtpCoolingDown ? `${otpCooldown}s` : "Send OTP"}
-              </button>
-            </div>
-            <button type="button" onClick={verifyAdminOtp} className="mt-3 w-full rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
-              Verify owner phone
-            </button>
-            <p className="mt-2 text-xs text-ink/60">The OTP is sent through Supabase phone authentication.</p>
-          </div>
+          <p className="mt-2 text-sm text-ink/65">Admin access is protected. Sign in with your configured admin account to unlock the dashboard.</p>
+          <a href="/api/auth/signin" className="mt-6 inline-flex w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
+            Open Admin Sign In
+          </a>
         </section>
       </main>
     );
@@ -401,17 +294,11 @@ export default function AdminPage() {
         <div>
           <h1 className="text-4xl font-black text-ink">{t("dashboard")}</h1>
           <p className="mt-2 text-ink/65">Secure owner controls for products, inventory, analytics, and incoming orders.</p>
-          {isOwnerPhoneAdmin ? <p className="mt-1 text-sm font-bold text-leaf-700">Owner phone verified: {ADMIN_PHONE}</p> : null}
         </div>
         <button
           type="button"
           onClick={() => {
-            if (session?.user?.role === "admin") {
-              signOut({ callbackUrl: "/" });
-            } else {
-              logoutCustomer();
-              toast.success("Owner phone signed out");
-            }
+            signOut({ callbackUrl: "/" });
           }}
           className="rounded-md border border-black/10 bg-white px-4 py-2 font-bold hover:bg-leaf-50"
         >
@@ -516,7 +403,7 @@ export default function AdminPage() {
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
             <h2 className="text-2xl font-black text-ink">User blocking</h2>
-            <p className="mt-1 text-sm text-ink/65">Block a customer by mobile number. Blocked users cannot verify OTP or place orders.</p>
+            <p className="mt-1 text-sm text-ink/65">Block a customer by mobile number. Blocked users cannot place orders.</p>
           </div>
           <div className="flex gap-2">
             <input value={blockPhoneInput} onChange={(event) => setBlockPhoneInput(event.target.value)} className="min-w-0 rounded-md border border-black/10 px-3 py-2" placeholder="10 digit mobile" />
@@ -535,7 +422,9 @@ export default function AdminPage() {
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          {Array.from(new Set([customer.phone, ...blockedPhones].filter(Boolean))).map((phone) => {
+          {blockedPhones.length === 0 ? (
+            <span className="rounded-full bg-leaf-50 px-3 py-2 text-sm font-bold text-leaf-700">No blocked users</span>
+          ) : blockedPhones.map((phone) => {
             const isBlocked = blockedPhones.includes(phone);
             return (
               <span key={phone} className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-bold ${isBlocked ? "bg-red-100 text-red-800" : "bg-leaf-50 text-leaf-700"}`}>

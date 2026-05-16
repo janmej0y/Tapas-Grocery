@@ -93,7 +93,6 @@ export type CustomerAccount = {
   id: string;
   name: string;
   phone: string;
-  isPhoneVerified: boolean;
   isBlocked: boolean;
   addresses: UserAddress[];
   orderIds: string[];

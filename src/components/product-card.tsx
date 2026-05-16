@@ -30,11 +30,6 @@ export function ProductCard({ product }: { product: Product }) {
   const linePrice = getUnitPrice(product.price, selectedUnit, product.variantPrices) * orderQuantity;
 
   function submitReview() {
-    if (!customer.isPhoneVerified) {
-      toast.error("Verify phone before reviewing.");
-      return;
-    }
-
     if (!reviewComment.trim()) {
       toast.error("Write a review comment first.");
       return;

@@ -516,42 +516,10 @@ export const promoCodes: PromoCode[] = [
 
 export const defaultCustomer: CustomerAccount = {
   id: "cus-default",
-  name: "Tapas Customer",
-  phone: "9876543210",
-  isPhoneVerified: false,
+  name: "Customer",
+  phone: "",
   isBlocked: false,
-  addresses: [
-    {
-      id: "addr-home",
-      label: "Home",
-      receiverName: "Tapas Customer",
-      phone: "9876543210",
-      line1: "12 Station Road",
-      line2: "Flat 2B",
-      city: "Kolkata",
-      state: "West Bengal",
-      pincode: "700001",
-      landmark: "Near market gate",
-      distanceKm: 0.8,
-      latitude: 22.5744,
-      longitude: 88.3629
-    },
-    {
-      id: "addr-work",
-      label: "Work",
-      receiverName: "Tapas Customer",
-      phone: "9876543210",
-      line1: "48 College Street",
-      line2: "Office 3",
-      city: "Kolkata",
-      state: "West Bengal",
-      pincode: "700073",
-      landmark: "Book lane",
-      distanceKm: 1.4,
-      latitude: 22.5762,
-      longitude: 88.3645
-    }
-  ],
-  orderIds: ["ORD-2401"],
-  favoriteProductIds: ["p-101", "p-123"]
+  addresses: [],
+  orderIds: [],
+  favoriteProductIds: []
 };

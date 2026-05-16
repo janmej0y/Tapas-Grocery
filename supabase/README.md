@@ -10,26 +10,26 @@ This folder contains the production database migration for the app.
 4. Paste the full SQL into the editor.
 5. Click **Run**.
 
-## Make The Owner Phone Admin
+## Auth Settings
 
-After the owner signs in once with phone OTP, run this SQL:
-
-```sql
-update public.customer_profiles
-set role = 'admin'
-where phone = '7477661933';
-```
-
-The RLS helper also treats `7477661933` as admin if that phone exists in `customer_profiles`.
-
-## Required Auth Setting
+The customer login page uses Supabase email/password and Google OAuth.
 
 In Supabase Dashboard:
 
-1. Go to **Authentication > Providers > Phone**.
-2. Enable phone provider.
-3. Configure your SMS provider.
-4. Keep OTP expiry short, for example 5 to 10 minutes.
+1. Go to **Authentication > Providers > Email**.
+2. Enable Email provider.
+3. Go to **Authentication > Providers > Google**.
+4. Enable Google provider and add your Google OAuth client credentials.
+5. Add your site URL and redirect URLs in **Authentication > URL Configuration**.
+
+Recommended redirect URLs:
+
+```text
+http://localhost:3000/login
+https://tapas-grocery.vercel.app/login
+```
+
+Phone SMS authentication is not used by the current app.
 
 ## Required Environment Variables
 

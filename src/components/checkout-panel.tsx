@@ -14,7 +14,6 @@ import { calculateDistanceKm, SHOP_LOCATION } from "@/lib/location";
 import { applyPromoCode } from "@/lib/promos";
 import type { Order, UserAddress } from "@/lib/types";
 import { formatCartItemName, getUnitPrice } from "@/lib/units";
-import { useOtpCooldown } from "@/hooks/use-otp-cooldown";
 
 type PaymentMethod = "COD" | "UPI" | "Card" | "NetBanking";
 
@@ -38,18 +37,16 @@ export function CheckoutPanel() {
   const { productName, t } = useLanguage();
   const {
     addOrder,
+    blockedPhones,
     cart,
     clearCart,
     customer,
-    markPhoneVerified,
     removeFromCart,
     reorder,
     updateCustomerAddress,
     updateQuantity,
   } = useStore();
-  const [phone, setPhone] = useState(customer.phone);
-  const [otp, setOtp] = useState("");
-  const [selectedAddressId, setSelectedAddressId] = useState(customer.addresses[0]?.id ?? "addr-manual");
+  const [selectedAddressId, setSelectedAddressId] = useState(customer.addresses[0]?.id ?? "manual");
   const [address, setAddress] = useState<UserAddress>(customer.addresses[0] ?? emptyAddress);
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");
@@ -57,7 +54,6 @@ export function CheckoutPanel() {
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { isOtpCoolingDown, otpCooldown, startOtpCooldown } = useOtpCooldown();
 
   const subtotal = useMemo(
     () => cart.reduce((total, item) => total + getUnitPrice(item.product.price, item.selectedUnit, item.product.variantPrices) * item.quantity, 0),
@@ -68,17 +64,18 @@ export function CheckoutPanel() {
   const delivery = calculateDeliveryFee(address.distanceKm, discountedSubtotal);
   const grandTotal = delivery.available ? discountedSubtotal + delivery.fee : discountedSubtotal;
   const isAddressComplete = validateAddress(address);
-  const isCurrentPhoneVerified = customer.isPhoneVerified && phone.replace(/\D/g, "").slice(-10) === customer.phone;
-  const canOrder = isCurrentPhoneVerified && !customer.isBlocked && isAddressComplete && delivery.available && cart.length > 0;
+  const normalizedPhone = normalizePhone(address.phone);
+  const isBlockedPhone = Boolean(normalizedPhone && blockedPhones.includes(normalizedPhone));
+  const canOrder = !isBlockedPhone && isAddressComplete && delivery.available && cart.length > 0;
 
   async function placeOrder() {
-    if (customer.isBlocked) {
+    if (isBlockedPhone) {
       toast.error("This mobile number has been blocked by the store.");
       return;
     }
 
-    if (!isCurrentPhoneVerified) {
-      toast.error("Please verify your phone number with OTP before ordering.");
+    if (!isValidMobile(address.phone)) {
+      toast.error("Please enter a valid 10 digit mobile number before ordering.");
       return;
     }
 
@@ -157,61 +154,6 @@ export function CheckoutPanel() {
 
     setAppliedPromo(result.promo.code);
     toast.success(result.message);
-  }
-
-  async function handleSendOtp() {
-    if (isOtpCoolingDown) {
-      toast.error(`Please wait ${otpCooldown} seconds before requesting another OTP.`);
-      return;
-    }
-
-    if (phone.replace(/\D/g, "").length < 10) {
-      toast.error("Enter a valid 10 digit mobile number.");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/otp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone })
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (typeof data.retryAfterSeconds === "number") {
-          startOtpCooldown(data.retryAfterSeconds);
-        }
-        throw new Error(data.error ?? "OTP could not be sent.");
-      }
-
-      startOtpCooldown(60);
-      setAddress((current) => ({ ...current, phone: phone.replace(/\D/g, "").slice(-10) }));
-      toast.success("OTP sent by Supabase Auth");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "OTP could not be sent.");
-    }
-  }
-
-  async function handleVerifyOtp() {
-    try {
-      const response = await fetch("/api/otp/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, token: otp })
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Invalid OTP.");
-      }
-
-      markPhoneVerified(phone);
-      setAddress((current) => ({ ...current, phone: phone.replace(/\D/g, "").slice(-10) }));
-      toast.success("Phone number verified with Supabase");
-    } catch (error) {
-      toast.error(customer.isBlocked ? "This mobile number is blocked." : error instanceof Error ? error.message : "Invalid OTP.");
-    }
   }
 
   async function fillAddressFromCoordinates(latitude: number, longitude: number) {
@@ -360,39 +302,6 @@ export function CheckoutPanel() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <section id="phone-login" className="scroll-mt-24 rounded-lg border border-black/10 bg-leaf-50 p-4">
-              <h3 className="font-black text-ink">Phone OTP Login</h3>
-              <div className="mt-3 space-y-3">
-                <input
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                  className="w-full rounded-md border border-black/10 bg-white px-3 py-2"
-                  placeholder="10 digit mobile number"
-                />
-                <div className="grid grid-cols-[1fr_auto] gap-2">
-                  <input value={otp} onChange={(event) => setOtp(event.target.value)} className="min-w-0 rounded-md border border-black/10 bg-white px-3 py-2" placeholder="OTP" />
-                  <button type="button" onClick={handleVerifyOtp} className="rounded-md bg-ink px-3 py-2 text-sm font-bold text-white hover:bg-leaf-700">
-                    Verify
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={isOtpCoolingDown}
-                  className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm font-bold hover:bg-leaf-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-ink/45"
-                >
-                  {isOtpCoolingDown ? `Resend in ${otpCooldown}s` : "Send OTP"}
-                </button>
-                <p className={`text-sm font-semibold ${customer.isPhoneVerified ? "text-leaf-700" : "text-ink/60"}`}>
-                  {customer.isBlocked
-                    ? "Blocked by admin"
-                    : customer.isPhoneVerified && phone.replace(/\D/g, "").slice(-10) === customer.phone
-                      ? "Phone verified. You can order anytime with this number."
-                      : "Phone verification required only once."}
-                </p>
-              </div>
-            </section>
-
             <section className="rounded-lg border border-black/10 bg-leaf-50 p-4">
               <h3 className="font-black text-ink">{t("orderHistory")}</h3>
               <div className="mt-3 space-y-2">
@@ -442,7 +351,7 @@ export function CheckoutPanel() {
               </select>
             </div>
             <AddressInput label="Receiver name" value={address.receiverName} onChange={(value) => setAddress((current) => ({ ...current, receiverName: value }))} />
-            <AddressInput label="Mobile number" value={address.phone} onChange={(value) => setAddress((current) => ({ ...current, phone: value }))} />
+            <AddressInput label="Mobile number" value={address.phone} onChange={(value) => setAddress((current) => ({ ...current, phone: value }))} inputMode="tel" />
             <AddressInput label="House / Flat / Street" value={address.line1} onChange={(value) => setAddress((current) => ({ ...current, line1: value }))} />
             <AddressInput label="Area / Locality" value={address.line2} onChange={(value) => setAddress((current) => ({ ...current, line2: value }))} />
             <div className="grid grid-cols-2 gap-2">
@@ -573,7 +482,7 @@ export function CheckoutPanel() {
           </dl>
 
           <p className={`mt-4 text-sm font-semibold ${delivery.available && isAddressComplete ? "text-leaf-700" : "text-red-700"}`}>
-            {!isAddressComplete ? "Full delivery address is required." : delivery.message}
+            {!isAddressComplete ? "Full delivery address and valid mobile number are required." : delivery.message}
           </p>
           <button
             type="button"
@@ -607,11 +516,11 @@ export function CheckoutPanel() {
   );
 }
 
-function AddressInput({ label, onChange, value }: { label: string; onChange: (value: string) => void; value: string }) {
+function AddressInput({ inputMode, label, onChange, value }: { inputMode?: "text" | "tel"; label: string; onChange: (value: string) => void; value: string }) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-ink">{label}</span>
-      <input value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2" />
+      <input inputMode={inputMode} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2" />
     </label>
   );
 }
@@ -638,7 +547,7 @@ function googleMapsExternalUrl(latitude?: number, longitude?: number) {
 function validateAddress(address: UserAddress) {
   return Boolean(
     address.receiverName.trim() &&
-      address.phone.replace(/\D/g, "").length >= 10 &&
+      isValidMobile(address.phone) &&
       address.line1.trim() &&
       address.line2.trim() &&
       address.city.trim() &&
@@ -647,4 +556,12 @@ function validateAddress(address: UserAddress) {
       address.landmark.trim() &&
       Number.isFinite(address.distanceKm)
   );
+}
+
+function normalizePhone(phone: string) {
+  return phone.replace(/\D/g, "").slice(-10);
+}
+
+function isValidMobile(phone: string) {
+  return /^[6-9]\d{9}$/.test(normalizePhone(phone));
 }

@@ -91,14 +91,6 @@ create table public.admin_activity_log (
   created_at timestamptz not null default now()
 );
 
-create table public.otp_request_locks (
-  phone text primary key,
-  ip_address text,
-  last_sent_at timestamptz not null default now(),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 create table public.delivery_agents (
   id uuid primary key default gen_random_uuid(),
   name text not null,
