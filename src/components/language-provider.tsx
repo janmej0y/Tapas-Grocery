@@ -1,11 +1,12 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { translations, type Language } from "@/lib/i18n";
+import { productTranslations, translations, type Language } from "@/lib/i18n";
 
 type LanguageContextValue = {
   language: Language;
   t: (key: keyof typeof translations.en) => string;
+  productName: (name: string) => string;
   toggleLanguage: () => void;
 };
 
@@ -18,6 +19,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     () => ({
       language,
       t: (key) => translations[language][key],
+      productName: (name) => (language === "bn" ? productTranslations[name] ?? name : name),
       toggleLanguage: () => setLanguage((current) => (current === "en" ? "bn" : "en"))
     }),
     [language]

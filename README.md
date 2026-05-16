@@ -147,6 +147,10 @@ ADMIN_PASSWORD=
 RAZORPAY_KEY_ID=
 RAZORPAY_KEY_SECRET=
 GEMINI_API_KEY=
+
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:admin@tapas-grocery.local
 ```
 
 Supabase dashboard may call the anon key a **publishable key**.
@@ -233,6 +237,7 @@ Kg, Gram, Liter, Milliliter, Packet, Bottle, Piece, Bundle, Can, Tube, Tub, Doze
 - Admin phone cannot be blocked from the dashboard
 - Checkout and OTP APIs include basic rate limiting
 - Service role key must only be used server-side
+- Web Push private VAPID key must only be used server-side
 
 ## 🚀 Deployment Notes
 

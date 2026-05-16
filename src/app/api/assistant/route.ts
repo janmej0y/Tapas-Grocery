@@ -64,6 +64,6 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({
-    answer: "Delivery is available within 2 km. Free delivery starts above ₹150 up to 1 km and above ₹400 up to 2 km."
+    answer: "Delivery is available within 20 km. Delivery is free above ₹200 within 1 km and above ₹400 within 2 km."
   });
 }

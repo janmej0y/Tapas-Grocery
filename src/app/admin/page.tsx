@@ -3,15 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { AlertTriangle, Ban, Download, Edit3, Eye, FileText, History, IndianRupee, LayoutDashboard, MessageCircle, PackagePlus, Save, Trash2, Truck, Undo2, Upload, XCircle } from "lucide-react";
+import { AlertTriangle, Ban, BellRing, Download, Edit3, Eye, FileText, History, IndianRupee, LayoutDashboard, MessageCircle, PackagePlus, Save, Trash2, Truck, Undo2, Upload, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useLanguage } from "@/components/language-provider";
 import { useStore } from "@/components/store-provider";
+import { useOtpCooldown } from "@/hooks/use-otp-cooldown";
 import { ADMIN_PHONE, isAdminPhone } from "@/lib/admin-access";
 import { formatCurrency } from "@/lib/format";
 import { buildWhatsAppOrderUrl, downloadInvoice } from "@/lib/invoice";
 import type { Order, Product, ProductCategory } from "@/lib/types";
+import { buildWeightVariantPrices, WEIGHT_UNIT_OPTIONS } from "@/lib/units";
 
 const emptyProduct: Omit<Product, "id"> = {
   name: "",
@@ -64,6 +66,7 @@ export default function AdminPage() {
   const [etaText, setEtaText] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const { isOtpCoolingDown, otpCooldown, startOtpCooldown } = useOtpCooldown();
 
   const isOwnerPhoneAdmin = customer.isPhoneVerified && isAdminPhone(customer.phone) && !customer.isBlocked;
   const isAdmin = session?.user?.role === "admin" || isOwnerPhoneAdmin;
@@ -84,6 +87,11 @@ export default function AdminPage() {
   }, []);
 
   async function sendAdminOtp() {
+    if (isOtpCoolingDown) {
+      toast.error(`Please wait ${otpCooldown} seconds before requesting another OTP.`);
+      return;
+    }
+
     if (!isAdminPhone(adminPhone)) {
       toast.error("Only the owner mobile number can unlock the dashboard.");
       return;
@@ -95,9 +103,12 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: adminPhone })
       });
-      const data = (await response.json()) as { provider?: string; error?: string };
+      const data = (await response.json()) as { provider?: string; error?: string; retryAfterSeconds?: number };
 
       if (!response.ok) {
+        if (typeof data.retryAfterSeconds === "number") {
+          startOtpCooldown(data.retryAfterSeconds);
+        }
         throw new Error(data.error ?? "OTP could not be sent.");
       }
 
@@ -105,6 +116,7 @@ export default function AdminPage() {
         sendOtp(adminPhone);
       }
 
+      startOtpCooldown(60);
       toast.success(data.provider === "demo" ? "Demo owner OTP is 123456" : "Owner OTP sent by Supabase");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "OTP could not be sent.");
@@ -145,18 +157,77 @@ export default function AdminPage() {
     }
   }
 
+  async function enablePushNotifications() {
+    if (!isOwnerPhoneAdmin) {
+      toast.error("Verify the owner phone before enabling notifications.");
+      return;
+    }
+
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      toast.error("Push notifications are not supported in this browser.");
+      return;
+    }
+
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+    if (!publicKey) {
+      toast.error("VAPID public key is missing.");
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        toast.error("Notification permission was not granted.");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const existingSubscription = await registration.pushManager.getSubscription();
+      const subscription =
+        existingSubscription ??
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey)
+        }));
+
+      const response = await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: customer.phone,
+          subscription
+        })
+      });
+      const data = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Notification subscription failed.");
+      }
+
+      toast.success("Admin order notifications enabled");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Notification setup failed.");
+    }
+  }
+
   function submitProduct() {
+    const unitOptions = form.unitType === "weight"
+      ? WEIGHT_UNIT_OPTIONS
+      : unitOptionsText
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+    const variantPrices = form.unitType === "weight" ? buildWeightVariantPrices(form.price) : parseVariantPrices(variantPricesText);
     const productForm = {
       ...form,
       dietary: dietaryText
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean),
-      unitOptions: unitOptionsText
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      variantPrices: parseVariantPrices(variantPricesText),
+      unitOptions,
+      variantPrices,
       reviews: form.reviews
     };
 
@@ -315,8 +386,13 @@ export default function AdminPage() {
                 inputMode="numeric"
                 placeholder="OTP"
               />
-              <button type="button" onClick={sendAdminOtp} className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-leaf-100">
-                Send OTP
+              <button
+                type="button"
+                onClick={sendAdminOtp}
+                disabled={isOtpCoolingDown}
+                className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-leaf-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-ink/45"
+              >
+                {isOtpCoolingDown ? `${otpCooldown}s` : "Send OTP"}
               </button>
             </div>
             <button type="button" onClick={verifyAdminOtp} className="mt-3 w-full rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
@@ -352,6 +428,23 @@ export default function AdminPage() {
           {t("logout")}
         </button>
       </div>
+
+      <section className="mt-6 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-xl font-black text-ink">Order notifications</h2>
+            <p className="mt-1 text-sm text-ink/65">Enable Web Push to receive new-order alerts even when the PWA is closed.</p>
+          </div>
+          <button
+            type="button"
+            onClick={enablePushNotifications}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700"
+          >
+            <BellRing className="h-4 w-4" />
+            Enable notifications
+          </button>
+        </div>
+      </section>
 
       <section aria-label={t("overview")} className="mt-8 grid gap-4 sm:grid-cols-3">
         <Metric title={t("products")} value={products.length.toString()} icon={<PackagePlus className="h-5 w-5" />} />
@@ -521,13 +614,32 @@ export default function AdminPage() {
               <textarea value={form.description ?? ""} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="mt-2 min-h-24 w-full rounded-md border border-black/10 px-3 py-2" />
             </label>
             <label className="block">
-              <span className="text-sm font-bold">Sale type</span>
-              <select value={form.unitType} onChange={(event) => setForm((current) => ({ ...current, unitType: event.target.value as Product["unitType"] }))} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2">
-                <option value="weight">Gram / Kg</option>
-                <option value="package">Packaged quantity</option>
+              <span className="text-sm font-bold">Product packaging</span>
+              <select
+                value={form.unitType}
+                onChange={(event) => {
+                  const unitType = event.target.value as Product["unitType"];
+                  setForm((current) => ({ ...current, unitType }));
+                  if (unitType === "weight") {
+                    setUnitOptionsText(WEIGHT_UNIT_OPTIONS.join(", "));
+                    setVariantPricesText("Auto-calculated from 25 Gram price");
+                  } else {
+                    setUnitOptionsText("1 pack");
+                    setVariantPricesText("1 pack:0");
+                  }
+                }}
+                className="mt-2 w-full rounded-md border border-black/10 px-3 py-2"
+              >
+                <option value="weight">Loose product (Gram / Kg)</option>
+                <option value="package">Packaged product</option>
               </select>
             </label>
-            <AdminInput label={t("price")} type="number" value={String(form.price)} onChange={(value) => setForm((current) => ({ ...current, price: Number(value) }))} />
+            <AdminInput
+              label={form.unitType === "weight" ? "Price for 25 Gram" : t("price")}
+              type="number"
+              value={String(form.price)}
+              onChange={(value) => setForm((current) => ({ ...current, price: Number(value) }))}
+            />
             <AdminInput label={t("imageUrl")} value={form.image_url} onChange={(value) => setForm((current) => ({ ...current, image_url: value }))} />
             <label className="block">
               <span className="text-sm font-bold">Upload product photo</span>
@@ -535,8 +647,16 @@ export default function AdminPage() {
             </label>
             <AdminInput label={t("stock")} type="number" value={String(form.stock)} onChange={(value) => setForm((current) => ({ ...current, stock: Number(value) }))} />
             <AdminInput label="Low-stock threshold" type="number" value={String(form.minStock ?? 10)} onChange={(value) => setForm((current) => ({ ...current, minStock: Number(value) }))} />
-            <AdminInput label="Unit options" value={unitOptionsText} onChange={setUnitOptionsText} />
-            <AdminInput label="Variant prices" value={variantPricesText} onChange={setVariantPricesText} />
+            {form.unitType === "weight" ? (
+              <div className="rounded-lg border border-leaf-100 bg-leaf-50 p-3 text-sm font-semibold text-ink/70">
+                Loose products use fixed options from 25 Gram to 5 Kg. Prices are auto-calculated from the 25 Gram price.
+              </div>
+            ) : (
+              <>
+                <AdminInput label="Pack options" value={unitOptionsText} onChange={setUnitOptionsText} />
+                <AdminInput label="Pack prices" value={variantPricesText} onChange={setVariantPricesText} />
+              </>
+            )}
             <AdminInput label="Dietary tags" value={dietaryText} onChange={setDietaryText} />
           </div>
           <button type="button" onClick={submitProduct} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
@@ -914,6 +1034,19 @@ function orderMapUrl(order: Order) {
 
 function verifyLocalAdminOtp(otp: string, pendingOtp: string) {
   return otp === pendingOtp || otp === "123456";
+}
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = `${value}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let index = 0; index < rawData.length; index += 1) {
+    outputArray[index] = rawData.charCodeAt(index);
+  }
+
+  return outputArray;
 }
 
 function buildDailyRevenue(orders: Order[]) {

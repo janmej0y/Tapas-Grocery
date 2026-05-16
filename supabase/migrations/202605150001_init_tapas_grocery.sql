@@ -51,7 +51,7 @@ create table if not exists public.addresses (
   landmark text,
   latitude numeric(10, 7),
   longitude numeric(10, 7),
-  distance_km numeric(5, 2) not null check (distance_km >= 0 and distance_km <= 2),
+  distance_km numeric(5, 2) not null check (distance_km >= 0 and distance_km <= 20),
   created_at timestamptz not null default now()
 );
 
@@ -82,7 +82,7 @@ create table if not exists public.orders (
   discount_amount numeric(10, 2) not null default 0 check (discount_amount >= 0),
   delivery_fee numeric(10, 2) not null check (delivery_fee >= 0),
   total_amount numeric(10, 2) not null check (total_amount >= 0),
-  delivery_distance numeric(5, 2) not null check (delivery_distance >= 0 and delivery_distance <= 2),
+  delivery_distance numeric(5, 2) not null check (delivery_distance >= 0 and delivery_distance <= 20),
   payment_method text not null check (payment_method in ('COD', 'UPI', 'Card', 'NetBanking')),
   payment_status text not null default 'Pending' check (payment_status in ('Pending', 'Paid', 'Failed')),
   status text not null default 'Pending' check (status in ('Pending', 'Accepted', 'Preparing', 'Out for delivery', 'Delivered', 'Cancelled', 'Refunded')),
@@ -133,6 +133,25 @@ create table if not exists public.admin_activity_log (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  admin_phone text not null,
+  user_agent text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.otp_request_locks (
+  phone text primary key,
+  ip_address text,
+  last_sent_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create or replace function public.current_user_role()
 returns text
 language sql
@@ -173,6 +192,8 @@ create index if not exists orders_status_idx on public.orders(status);
 create index if not exists order_items_order_id_idx on public.order_items(order_id);
 create index if not exists reviews_product_id_idx on public.product_reviews(product_id);
 create index if not exists activity_created_at_idx on public.admin_activity_log(created_at desc);
+create index if not exists push_subscriptions_admin_phone_idx on public.push_subscriptions(admin_phone);
+create index if not exists otp_request_locks_last_sent_at_idx on public.otp_request_locks(last_sent_at desc);
 
 alter table public.products enable row level security;
 alter table public.customer_profiles enable row level security;
@@ -185,6 +206,8 @@ alter table public.order_items enable row level security;
 alter table public.product_reviews enable row level security;
 alter table public.promo_codes enable row level security;
 alter table public.admin_activity_log enable row level security;
+alter table public.push_subscriptions enable row level security;
+alter table public.otp_request_locks enable row level security;
 
 drop policy if exists "Products are public read" on public.products;
 create policy "Products are public read"
@@ -369,6 +392,19 @@ create policy "Admins write activity log"
 on public.admin_activity_log for insert
 to authenticated
 with check (public.is_admin());
+
+drop policy if exists "Admins manage push subscriptions" on public.push_subscriptions;
+create policy "Admins manage push subscriptions"
+on public.push_subscriptions for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "Admins read otp request locks" on public.otp_request_locks;
+create policy "Admins read otp request locks"
+on public.otp_request_locks for select
+to authenticated
+using (public.is_admin());
 
 insert into public.promo_codes (code, type, value, min_cart_total, description, active)
 values

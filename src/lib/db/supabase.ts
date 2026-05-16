@@ -49,7 +49,7 @@ create table public.addresses (
   landmark text,
   latitude numeric(10, 7),
   longitude numeric(10, 7),
-  distance_km numeric(5, 2) not null check (distance_km >= 0 and distance_km <= 2),
+  distance_km numeric(5, 2) not null check (distance_km >= 0 and distance_km <= 20),
   created_at timestamptz not null default now()
 );
 
@@ -89,6 +89,14 @@ create table public.admin_activity_log (
   action text not null,
   details text not null,
   created_at timestamptz not null default now()
+);
+
+create table public.otp_request_locks (
+  phone text primary key,
+  ip_address text,
+  last_sent_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table public.delivery_agents (

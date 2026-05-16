@@ -1,16 +1,20 @@
 # Dependencies
 node_modules/
 
-# Next.js
+# Next.js output
 .next/
 out/
 
-# Production/build output
+# Build, cache, and coverage output
 dist/
 build/
 coverage/
+.turbo/
+.vercel/
+*.tsbuildinfo
 
 # Logs
+logs/
 *.log
 devserver.*.log
 npm-debug.log*
@@ -18,7 +22,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Environment variables and secrets
+# Environment variables and local secrets
 .env
 .env.*
 !.env.example
@@ -26,31 +30,43 @@ pnpm-debug.log*
 # Supabase local state
 supabase/.branches/
 supabase/.temp/
+supabase/.env
+supabase/.env.*
 
 # Android / Bubblewrap generated project
 android-twa/
 
-# Android signing secrets and generated packages
+# Android signing secrets
 *.keystore
 *.jks
 *.p12
+*.pem
+*.key
 *.idsig
+
+# Android generated packages outside public downloads
 app-release*.apk
 app-release*.aab
 *-release*.apk
 *-release*.aab
+*.apks
 
-# Keep the public APK downloadable from the website only if you intentionally want to publish it.
+# Keep the website-downloadable APK only when intentionally published.
 !public/downloads/
 !public/downloads/.gitkeep
 !public/downloads/tapas-grocery.apk
 
-# OS / editor files
+# OS files
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Editor files
 .idea/
 .vscode/
+*.swp
+*.swo
 
-# TypeScript
-*.tsbuildinfo
+# Local test tooling
+playwright-report/
+test-results/

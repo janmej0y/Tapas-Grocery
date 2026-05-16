@@ -5,12 +5,14 @@ import Image from "next/image";
 import { ArrowLeft, Heart, Minus, Plus, ShoppingBasket, Star } from "lucide-react";
 import { use, useState } from "react";
 import toast from "react-hot-toast";
+import { useLanguage } from "@/components/language-provider";
 import { useStore } from "@/components/store-provider";
 import { formatCurrency } from "@/lib/format";
 import { getUnitPrice } from "@/lib/units";
 
 export default function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { productName, t } = useLanguage();
   const { addToCart, customer, products, toggleFavoriteProduct } = useStore();
   const product = products.find((item) => item.id === id);
   const [selectedUnit, setSelectedUnit] = useState(product?.unitOptions[0] ?? "");
@@ -28,6 +30,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
     );
   }
 
+  const orderQuantity = product.unitType === "weight" ? 1 : quantity;
   const unitPrice = getUnitPrice(product.price, selectedUnit, product.variantPrices);
   const isFavorite = customer.favoriteProductIds.includes(product.id);
   const averageRating = product.reviews.length
@@ -50,7 +53,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-black uppercase tracking-[0.16em] text-leaf-700">{product.brand}</p>
-              <h1 className="mt-2 text-4xl font-black text-ink">{product.name}</h1>
+              <h1 className="mt-2 text-4xl font-black text-ink">{productName(product.name)}</h1>
               <p className="mt-2 inline-flex items-center gap-1 font-semibold text-ink/70">
                 <Star className="h-4 w-4 fill-marigold text-marigold" />
                 {averageRating ? averageRating.toFixed(1) : "New"} · {product.reviews.length} reviews
@@ -72,7 +75,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="mt-6 rounded-lg border border-black/10 bg-white p-4">
             <label className="block text-sm font-bold text-ink">
-              {product.unitType === "weight" ? "Choose gram/kg" : "Choose pack quantity"}
+              {product.unitType === "weight" ? t("selectWeight") : t("selectPack")}
               <select value={selectedUnit} onChange={(event) => setSelectedUnit(event.target.value)} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2">
                 {product.unitOptions.map((unit) => (
                   <option key={unit} value={unit}>
@@ -81,29 +84,34 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                 ))}
               </select>
             </label>
+            {product.unitType === "weight" ? <p className="mt-3 text-sm font-semibold text-ink/65">{t("pricedByWeight")}</p> : null}
             <div className="mt-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="rounded-md border border-black/10 p-2">
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="grid h-10 min-w-12 place-items-center rounded-md bg-leaf-50 px-3 font-black">{quantity}</span>
-                <button type="button" onClick={() => setQuantity((value) => value + 1)} className="rounded-md border border-black/10 p-2">
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="text-2xl font-black text-leaf-700">{formatCurrency(unitPrice * quantity)}</p>
+              {product.unitType === "package" ? (
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="rounded-md border border-black/10 p-2">
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="grid h-10 min-w-12 place-items-center rounded-md bg-leaf-50 px-3 font-black">{quantity}</span>
+                  <button type="button" onClick={() => setQuantity((value) => Math.min(30, value + 1))} className="rounded-md border border-black/10 p-2">
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <span className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-bold text-ink/70">{selectedUnit}</span>
+              )}
+              <p className="text-2xl font-black text-leaf-700">{formatCurrency(unitPrice * orderQuantity)}</p>
             </div>
             <button
               type="button"
               disabled={product.stock === 0}
               onClick={() => {
-                addToCart(product, selectedUnit, quantity);
-                toast.success(`${product.name} added to cart`);
+                addToCart(product, selectedUnit, orderQuantity);
+                toast.success(`${productName(product.name)} added to cart`);
               }}
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-black text-white hover:bg-leaf-700 disabled:bg-gray-300"
             >
               <ShoppingBasket className="h-5 w-5" />
-              Add to cart
+              {t("addToCart")}
             </button>
           </div>
 
@@ -127,7 +135,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             {related.map((item) => (
               <Link key={item.id} href={`/products/${item.id}`} className="rounded-lg border border-black/10 bg-white p-3 font-bold hover:bg-leaf-50">
-                {item.name}
+                {productName(item.name)}
                 <span className="mt-1 block text-sm font-semibold text-leaf-700">{formatCurrency(item.price)}</span>
               </Link>
             ))}

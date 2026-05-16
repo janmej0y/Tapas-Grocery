@@ -1,7 +1,7 @@
 const policies = [
   {
     title: "Delivery Policy",
-    body: "Delivery is available within 2 km of Tapas Grocery Store, Hatimuri. Fees are calculated automatically from the selected map location and cart total."
+    body: "Delivery is available within 20 km of Tapas Grocery Store, Hatimuri. Within 300 meters the fee is ₹3; after that ₹1 is added for every 100 meters, with free delivery rules applied automatically."
   },
   {
     title: "Refund Policy",

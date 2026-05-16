@@ -17,29 +17,36 @@ export function calculateDeliveryFee(distanceKm: number, cartTotal: number): Del
     };
   }
 
-  if (distanceKm > 0.3 && distanceKm <= 1) {
-    const fee = cartTotal > 150 ? 0 : 10;
-
+  if (distanceKm > 20) {
     return {
-      available: true,
-      fee,
-      message: fee === 0 ? "Free delivery unlocked over ₹150." : "Delivery fee is ₹10 up to 1 km."
+      available: false,
+      fee: 0,
+      message: "Delivery not available outside 20 km."
     };
   }
 
-  if (distanceKm > 1 && distanceKm <= 2) {
-    const fee = cartTotal > 400 ? 0 : 20;
-
+  if (distanceKm <= 1 && cartTotal > 200) {
     return {
       available: true,
-      fee,
-      message: fee === 0 ? "Free delivery unlocked over ₹400." : "Delivery fee is ₹20 up to 2 km."
+      fee: 0,
+      message: "Free delivery unlocked over ₹200 within 1 km."
     };
   }
+
+  if (distanceKm <= 2 && cartTotal > 400) {
+    return {
+      available: true,
+      fee: 0,
+      message: "Free delivery unlocked over ₹400 within 2 km."
+    };
+  }
+
+  const extraHundredMeterBlocks = Math.ceil(((distanceKm - 0.3) * 1000) / 100);
+  const fee = 3 + Math.max(0, extraHundredMeterBlocks);
 
   return {
-    available: false,
-    fee: 0,
-    message: "Delivery not available outside 2 km."
+    available: true,
+    fee,
+    message: `Delivery fee is ₹${fee}. After 300 meters, ₹1 is added for every 100 meters.`
   };
 }

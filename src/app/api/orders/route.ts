@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { calculateDeliveryFee } from "@/lib/delivery";
 import { applyPromoCode } from "@/lib/promos";
+import { sendAdminOrderNotification } from "@/lib/push";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { orderToSupabaseRow } from "@/lib/supabase/mappers";
@@ -38,6 +39,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Customer name, phone, full address, distance, and cart items are required." }, { status: 400 });
   }
 
+  if (body.paymentMethod && body.paymentMethod !== "COD") {
+    return NextResponse.json({ error: "Only cash on delivery is available until Razorpay verification is completed." }, { status: 400 });
+  }
+
   const subtotal = body.items.reduce((total, item) => total + item.price * item.quantity, 0);
   const promo = body.promoCode ? applyPromoCode(body.promoCode, subtotal) : null;
   const delivery = calculateDeliveryFee(body.distanceKm, subtotal - (promo?.discount ?? 0));
@@ -59,8 +64,8 @@ export async function POST(request: Request) {
       total_amount: total,
       delivery_fee: delivery.fee,
       delivery_distance: body.distanceKm,
-      payment_method: body.paymentMethod ?? "COD",
-      payment_status: body.paymentMethod === "COD" ? "Pending" : "Paid",
+      payment_method: "COD",
+      payment_status: "Pending",
       status: "Pending",
       assigned_agent_id: undefined,
       delivery_eta: "Waiting for owner confirmation",
@@ -102,6 +107,8 @@ export async function POST(request: Request) {
       }
     }
   }
+
+  sendAdminOrderNotification(order).catch(() => undefined);
 
   return NextResponse.json({ order });
 }

@@ -6,15 +6,22 @@ import { ArrowRight, LogOut, ShieldCheck, Smartphone, Store, UserRoundCheck } fr
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useStore } from "@/components/store-provider";
+import { useOtpCooldown } from "@/hooks/use-otp-cooldown";
 import { isAdminPhone } from "@/lib/admin-access";
 
 export default function LoginPage() {
   const { customer, logoutCustomer, markPhoneVerified, pendingOtp, sendOtp, verifyOtp } = useStore();
   const [phone, setPhone] = useState(customer.phone);
   const [otp, setOtp] = useState("");
+  const { isOtpCoolingDown, otpCooldown, startOtpCooldown } = useOtpCooldown();
   const isCurrentPhoneVerified = customer.isPhoneVerified && normalizePhone(phone) === customer.phone;
 
   async function handleSendOtp() {
+    if (isOtpCoolingDown) {
+      toast.error(`Please wait ${otpCooldown} seconds before requesting another OTP.`);
+      return;
+    }
+
     if (normalizePhone(phone).length < 10) {
       toast.error("Enter a valid 10 digit mobile number.");
       return;
@@ -29,10 +36,14 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (typeof data.retryAfterSeconds === "number") {
+          startOtpCooldown(data.retryAfterSeconds);
+        }
         throw new Error(data.error ?? "OTP could not be sent.");
       }
 
       const code = data.provider === "demo" ? sendOtp(phone) : "";
+      startOtpCooldown(60);
       toast.success(data.provider === "demo" ? `Demo OTP sent: ${code}` : "OTP sent to your phone");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "OTP could not be sent.");
@@ -126,8 +137,13 @@ export default function LoginPage() {
               />
             </label>
             <div className="grid gap-2 sm:grid-cols-2">
-              <button type="button" onClick={handleSendOtp} className="rounded-md border border-black/10 bg-white px-4 py-3 font-bold hover:bg-leaf-50">
-                Send OTP
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={isOtpCoolingDown}
+                className="rounded-md border border-black/10 bg-white px-4 py-3 font-bold hover:bg-leaf-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-ink/45"
+              >
+                {isOtpCoolingDown ? `Resend in ${otpCooldown}s` : "Send OTP"}
               </button>
               <button type="button" onClick={handleVerifyOtp} className="rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
                 Verify Login

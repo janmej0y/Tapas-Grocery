@@ -14,6 +14,7 @@ import { calculateDistanceKm, SHOP_LOCATION } from "@/lib/location";
 import { applyPromoCode } from "@/lib/promos";
 import type { Order, UserAddress } from "@/lib/types";
 import { formatCartItemName, getUnitPrice } from "@/lib/units";
+import { useOtpCooldown } from "@/hooks/use-otp-cooldown";
 
 type PaymentMethod = "COD" | "UPI" | "Card" | "NetBanking";
 
@@ -31,8 +32,10 @@ const emptyAddress: UserAddress = {
   distanceKm: 0.3
 };
 
+type ReverseAddress = Pick<UserAddress, "line1" | "line2" | "city" | "state" | "pincode" | "landmark">;
+
 export function CheckoutPanel() {
-  const { t } = useLanguage();
+  const { productName, t } = useLanguage();
   const {
     addOrder,
     cart,
@@ -53,10 +56,11 @@ export function CheckoutPanel() {
   const [address, setAddress] = useState<UserAddress>(customer.addresses[0] ?? emptyAddress);
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isOtpCoolingDown, otpCooldown, startOtpCooldown } = useOtpCooldown();
 
   const subtotal = useMemo(
     () => cart.reduce((total, item) => total + getUnitPrice(item.product.price, item.selectedUnit, item.product.variantPrices) * item.quantity, 0),
@@ -69,20 +73,6 @@ export function CheckoutPanel() {
   const isAddressComplete = validateAddress(address);
   const isCurrentPhoneVerified = customer.isPhoneVerified && phone.replace(/\D/g, "").slice(-10) === customer.phone;
   const canOrder = isCurrentPhoneVerified && !customer.isBlocked && isAddressComplete && delivery.available && cart.length > 0;
-
-  async function createPaymentOrder() {
-    const response = await fetch("/api/payment/razorpay", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: grandTotal })
-    });
-
-    if (!response.ok) {
-      throw new Error("Payment gateway is temporarily unavailable.");
-    }
-
-    return response.json();
-  }
 
   async function placeOrder() {
     if (customer.isBlocked) {
@@ -105,6 +95,11 @@ export function CheckoutPanel() {
       return;
     }
 
+    if (paymentMethod !== "COD") {
+      toast.error(t("onlinePaymentDisabled"));
+      return;
+    }
+
     const unavailableItem = cart.find((item) => item.quantity > item.product.stock || item.product.stock <= 0);
     if (unavailableItem) {
       toast.error(`${unavailableItem.product.name} is out of stock or below requested quantity.`);
@@ -115,11 +110,6 @@ export function CheckoutPanel() {
 
     try {
       updateCustomerAddress(address);
-
-      if (paymentMethod !== "COD") {
-        const paymentOrder = await createPaymentOrder();
-        toast.success(paymentOrder.gateway === "demo" ? "Demo UPI payment authorized" : "Payment order created");
-      }
 
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -173,6 +163,11 @@ export function CheckoutPanel() {
   }
 
   async function handleSendOtp() {
+    if (isOtpCoolingDown) {
+      toast.error(`Please wait ${otpCooldown} seconds before requesting another OTP.`);
+      return;
+    }
+
     if (phone.replace(/\D/g, "").length < 10) {
       toast.error("Enter a valid 10 digit mobile number.");
       return;
@@ -187,10 +182,14 @@ export function CheckoutPanel() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (typeof data.retryAfterSeconds === "number") {
+          startOtpCooldown(data.retryAfterSeconds);
+        }
         throw new Error(data.error ?? "OTP could not be sent.");
       }
 
       const code = data.provider === "demo" ? sendOtp(phone) : "";
+      startOtpCooldown(60);
       setAddress((current) => ({ ...current, phone: phone.replace(/\D/g, "").slice(-10) }));
       toast.success(data.provider === "demo" ? `Demo OTP sent: ${code}` : "OTP sent by Supabase Auth");
     } catch (error) {
@@ -223,6 +222,30 @@ export function CheckoutPanel() {
     }
   }
 
+  async function fillAddressFromCoordinates(latitude: number, longitude: number) {
+    try {
+      const response = await fetch(`/api/location/reverse?lat=${latitude}&lon=${longitude}`);
+      const data = (await response.json()) as Partial<ReverseAddress> & { error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Address lookup failed.");
+      }
+
+      setAddress((current) => ({
+        ...current,
+        line1: data.line1 || current.line1,
+        line2: data.line2 || current.line2,
+        city: data.city || current.city,
+        state: data.state || current.state || "West Bengal",
+        pincode: data.pincode || current.pincode,
+        landmark: data.landmark || current.landmark
+      }));
+      toast.success("Address filled from map location. You can edit it before ordering.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Address lookup failed. Please edit manually.");
+    }
+  }
+
   function detectLocation() {
     if (!navigator.geolocation) {
       toast.error("Location detection is not supported on this device.");
@@ -231,7 +254,7 @@ export function CheckoutPanel() {
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const nextLocation = {
           latitude: Number(position.coords.latitude.toFixed(7)),
           longitude: Number(position.coords.longitude.toFixed(7))
@@ -242,6 +265,7 @@ export function CheckoutPanel() {
           distanceKm: calculateDistanceKm(nextLocation),
           landmark: current.landmark || "Detected from current location"
         }));
+        await fillAddressFromCoordinates(nextLocation.latitude, nextLocation.longitude);
         setIsLocating(false);
         toast.success("Location detected");
       },
@@ -273,6 +297,17 @@ export function CheckoutPanel() {
     });
   }
 
+  async function fillCurrentMapAddress() {
+    if (typeof address.latitude !== "number" || typeof address.longitude !== "number") {
+      toast.error("Choose current location or enter latitude and longitude first.");
+      return;
+    }
+
+    setIsLocating(true);
+    await fillAddressFromCoordinates(address.latitude, address.longitude);
+    setIsLocating(false);
+  }
+
   return (
     <section id="cart" className="scroll-mt-24 bg-white py-8 sm:py-10">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
@@ -287,7 +322,7 @@ export function CheckoutPanel() {
                   <div key={`${item.product.id}-${item.selectedUnit}`} className="grid gap-4 p-4 sm:grid-cols-[72px_1fr_auto] sm:items-center">
                     <Image src={item.product.image_url} alt={item.product.name} width={80} height={80} className="aspect-square rounded-md object-cover" />
                     <div>
-                      <h3 className="font-bold text-ink">{formatCartItemName(item.product.name, item.selectedUnit)}</h3>
+                      <h3 className="font-bold text-ink">{formatCartItemName(productName(item.product.name), item.selectedUnit)}</h3>
                       <p className="text-sm text-ink/65">{formatCurrency(getUnitPrice(item.product.price, item.selectedUnit, item.product.variantPrices))}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -296,7 +331,7 @@ export function CheckoutPanel() {
                         onClick={() => {
                           updateQuantity(item.product.id, item.selectedUnit, item.quantity - 1);
                           if (item.quantity === 1) {
-                            toast.success(`${item.product.name} removed from cart`);
+                            toast.success(`${productName(item.product.name)} removed from cart`);
                           }
                         }}
                         className="rounded-md border border-black/10 p-2 hover:bg-leaf-50"
@@ -317,7 +352,7 @@ export function CheckoutPanel() {
                         type="button"
                         onClick={() => {
                           removeFromCart(item.product.id, item.selectedUnit);
-                          toast.success(`${item.product.name} removed from cart`);
+                          toast.success(`${productName(item.product.name)} removed from cart`);
                         }}
                         className="inline-flex items-center gap-2 rounded-md border border-black/10 px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-50"
                         aria-label={t("remove")}
@@ -348,8 +383,13 @@ export function CheckoutPanel() {
                     Verify
                   </button>
                 </div>
-                <button type="button" onClick={handleSendOtp} className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm font-bold hover:bg-leaf-100">
-                  Send OTP
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={isOtpCoolingDown}
+                  className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm font-bold hover:bg-leaf-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-ink/45"
+                >
+                  {isOtpCoolingDown ? `Resend in ${otpCooldown}s` : "Send OTP"}
                 </button>
                 <p className={`text-sm font-semibold ${customer.isPhoneVerified ? "text-leaf-700" : "text-ink/60"}`}>
                   {customer.isBlocked
@@ -427,7 +467,7 @@ export function CheckoutPanel() {
                     <MapPin className="h-4 w-4 text-leaf-700" />
                     Delivery location
                   </p>
-                  <p className="mt-1 text-xs text-ink/60">Detect automatically or enter coordinates manually.</p>
+                  <p className="mt-1 text-xs text-ink/60">Detect location to auto-fill the address, then edit anything if needed.</p>
                 </div>
                 <button
                   type="button"
@@ -461,6 +501,14 @@ export function CheckoutPanel() {
                   />
                 </label>
               </div>
+              <button
+                type="button"
+                onClick={fillCurrentMapAddress}
+                disabled={isLocating}
+                className="mt-3 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm font-bold hover:bg-leaf-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-ink/45"
+              >
+                Fill address from selected map location
+              </button>
               <div className="mt-3 overflow-hidden rounded-lg border border-black/10">
                 <iframe
                   title="Delivery location map"
@@ -493,13 +541,26 @@ export function CheckoutPanel() {
             </div>
             <div>
               <span className="text-sm font-bold text-ink">Payment</span>
+              <p className="mt-1 rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">{t("codOnlyNotice")}</p>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {(["UPI", "Card", "NetBanking", "COD"] as PaymentMethod[]).map((method) => (
                   <button
                     key={method}
                     type="button"
-                    onClick={() => setPaymentMethod(method)}
-                    className={`rounded-md border px-3 py-2 text-sm font-bold ${paymentMethod === method ? "border-leaf-600 bg-leaf-600 text-white" : "border-black/10 bg-white text-ink"}`}
+                    onClick={() => {
+                      if (method !== "COD") {
+                        toast.error(t("onlinePaymentDisabled"));
+                        return;
+                      }
+                      setPaymentMethod(method);
+                    }}
+                    className={`rounded-md border px-3 py-2 text-sm font-bold ${
+                      paymentMethod === method
+                        ? "border-leaf-600 bg-leaf-600 text-white"
+                        : method === "COD"
+                          ? "border-black/10 bg-white text-ink"
+                          : "border-black/10 bg-gray-100 text-ink/45"
+                    }`}
                   >
                     {method === "COD" ? t("cashOnDelivery") : method}
                   </button>

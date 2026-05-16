@@ -12,19 +12,22 @@ import type { Product } from "@/lib/types";
 import { getUnitPrice } from "@/lib/units";
 
 export function ProductCard({ product }: { product: Product }) {
-  const { t } = useLanguage();
+  const { productName, t } = useLanguage();
   const { addProductReview, addToCart, customer, toggleFavoriteProduct } = useStore();
   const [isChoosing, setIsChoosing] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(product.unitOptions[0]);
   const [quantity, setQuantity] = useState(1);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
-  const linePrice = getUnitPrice(product.price, selectedUnit, product.variantPrices) * quantity;
   const averageRating =
     product.reviews.length > 0
       ? product.reviews.reduce((total, review) => total + review.rating, 0) / product.reviews.length
       : 0;
   const isFavorite = customer.favoriteProductIds.includes(product.id);
+  const displayName = productName(product.name);
+  const isPackaged = product.unitType === "package";
+  const orderQuantity = isPackaged ? quantity : 1;
+  const linePrice = getUnitPrice(product.price, selectedUnit, product.variantPrices) * orderQuantity;
 
   function submitReview() {
     if (!customer.isPhoneVerified) {
@@ -48,11 +51,11 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm">
-      <button type="button" onClick={() => setIsChoosing((value) => !value)} className="block w-full text-left" aria-label={`Choose ${product.name}`}>
+      <button type="button" onClick={() => setIsChoosing((value) => !value)} className="block w-full text-left" aria-label={`Choose ${displayName}`}>
         <div className="aspect-[4/3] overflow-hidden bg-leaf-50">
           <Image
             src={product.image_url}
-            alt={product.name}
+            alt={displayName}
             width={640}
             height={480}
             className="h-full w-full object-cover transition duration-300 hover:scale-105"
@@ -63,7 +66,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div>
           <div className="flex items-start justify-between gap-3">
             <Link href={`/products/${product.id}`} className="text-left text-lg font-bold text-ink hover:text-leaf-700">
-              {product.name}
+              {displayName}
             </Link>
             <div className="flex items-center gap-2">
               <button
@@ -81,7 +84,7 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           </div>
           <p className="mt-1 text-sm text-ink/65">
-            {product.stock} {t("inStock")} · {product.unitType === "weight" ? "Gram/Kg" : "Packaged"}
+            {product.stock} {t("inStock")} · {product.unitType === "weight" ? t("looseProduct") : t("packagedProduct")}
           </p>
           <p className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-ink/70">
             <Star className="h-4 w-4 fill-marigold text-marigold" />
@@ -101,7 +104,7 @@ export function ProductCard({ product }: { product: Product }) {
         {isChoosing ? (
           <div className="rounded-lg bg-leaf-50 p-3">
             <label className="block text-sm font-bold text-ink">
-              {product.unitType === "weight" ? "Select weight" : "Select quantity pack"}
+              {product.unitType === "weight" ? t("selectWeight") : t("selectPack")}
               <select value={selectedUnit} onChange={(event) => setSelectedUnit(event.target.value)} className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2">
                 {product.unitOptions.map((unit) => (
                   <option key={unit} value={unit}>
@@ -111,15 +114,25 @@ export function ProductCard({ product }: { product: Product }) {
               </select>
             </label>
             <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="rounded-md border border-black/10 bg-white p-2" aria-label="Decrease product quantity">
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="grid h-9 min-w-10 place-items-center rounded-md bg-white px-3 text-sm font-bold">{quantity}</span>
-                <button type="button" onClick={() => setQuantity((value) => value + 1)} className="rounded-md border border-black/10 bg-white p-2" aria-label="Increase product quantity">
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
+              {isPackaged ? (
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="rounded-md border border-black/10 bg-white p-2" aria-label="Decrease product quantity">
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <select value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} className="h-9 rounded-md border border-black/10 bg-white px-3 text-sm font-bold" aria-label="Packaged quantity">
+                    {Array.from({ length: 30 }, (_, index) => index + 1).map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={() => setQuantity((value) => Math.min(30, value + 1))} className="rounded-md border border-black/10 bg-white p-2" aria-label="Increase product quantity">
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm font-semibold text-ink/65">{t("pricedByWeight")}</p>
+              )}
               <p className="font-black text-leaf-700">{formatCurrency(linePrice)}</p>
             </div>
           </div>
@@ -130,8 +143,8 @@ export function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             onClick={() => {
-              addToCart(product, selectedUnit, quantity);
-              toast.success(`${product.name} (${selectedUnit}) added to cart`);
+              addToCart(product, selectedUnit, orderQuantity);
+              toast.success(`${displayName} (${selectedUnit}) added to cart`);
             }}
             disabled={product.stock === 0}
             className="inline-flex items-center gap-2 rounded-md bg-leaf-600 px-3 py-2 text-sm font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600"
