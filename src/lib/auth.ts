@@ -2,7 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 
-const adminEmail = process.env.ADMIN_EMAIL ?? "admin@tapas.local";
+const ADMIN_AUTH_EMAIL = "borj18237@gmail.com";
 const adminPassword = process.env.ADMIN_PASSWORD ?? "tapadmin123";
 
 export const authOptions: NextAuthOptions = {
@@ -17,11 +17,13 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (credentials?.email === adminEmail && credentials.password === adminPassword) {
+        const email = credentials?.email?.trim().toLowerCase();
+
+        if (email === ADMIN_AUTH_EMAIL && credentials?.password === adminPassword) {
           return {
             id: "admin",
             name: "Tapas Store Admin",
-            email: adminEmail,
+            email: ADMIN_AUTH_EMAIL,
             role: "admin"
           };
         }
@@ -35,8 +37,13 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
+    async signIn({ user }) {
+      return user.email?.trim().toLowerCase() === ADMIN_AUTH_EMAIL;
+    },
     async jwt({ token, user }) {
-      if (user && "role" in user) {
+      if (user?.email?.trim().toLowerCase() === ADMIN_AUTH_EMAIL) {
+        token.role = "admin";
+      } else if (user && "role" in user) {
         token.role = user.role;
       }
 
