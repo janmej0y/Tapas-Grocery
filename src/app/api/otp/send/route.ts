@@ -49,13 +49,7 @@ export async function POST(request: Request) {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !anonKey) {
-    await recordOtpSend(supabaseAdmin, normalizedPhone, ip);
-    return NextResponse.json({
-      provider: "demo",
-      phone: normalizedPhone,
-      otp: "123456",
-      message: "Supabase is not configured. Demo OTP returned for local development."
-    });
+    return NextResponse.json({ error: "Supabase phone OTP is not configured. Add Supabase keys before login can be used." }, { status: 500 });
   }
 
   const supabase = createClient(supabaseUrl, anonKey);

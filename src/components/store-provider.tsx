@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { isAdminPhone, normalizeLocalPhone } from "@/lib/admin-access";
-import { deliveryAgents, demoCustomer, initialOrders, initialProducts } from "@/lib/mock-data";
+import { defaultCustomer, deliveryAgents, initialOrders, initialProducts } from "@/lib/mock-data";
 import type { AdminActivity, CartItem, CustomerAccount, DeliveryAgent, Order, OrderStatus, Product, ProductReview, RefundStatus, UserAddress } from "@/lib/types";
 
 type ProductInput = Omit<Product, "id">;
@@ -24,9 +24,6 @@ type StoreContextValue = {
   activityLog: AdminActivity[];
   agents: DeliveryAgent[];
   lowStockProducts: Product[];
-  pendingOtp: string;
-  sendOtp: (phone: string) => string;
-  verifyOtp: (otp: string) => boolean;
   markPhoneVerified: (phone: string) => void;
   logoutCustomer: () => void;
   updateCustomerAddress: (address: UserAddress) => void;
@@ -59,11 +56,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const [customer, setCustomer] = useState<CustomerAccount>(demoCustomer);
+  const [customer, setCustomer] = useState<CustomerAccount>(defaultCustomer);
   const [blockedPhones, setBlockedPhones] = useState<string[]>([]);
   const [activityLog, setActivityLog] = useState<AdminActivity[]>([]);
-  const [pendingOtp, setPendingOtp] = useState("");
-  const [pendingPhone, setPendingPhone] = useState("");
   const lowStockProducts = useMemo(() => products.filter((product) => product.stock <= (product.minStock ?? 10)), [products]);
 
   useEffect(() => {
@@ -79,9 +74,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setProducts(parsed.products ?? initialProducts);
       setOrders(parsed.orders ?? initialOrders);
       setCustomer({
-        ...(parsed.customer ?? demoCustomer),
-        favoriteProductIds: (parsed.customer ?? demoCustomer).favoriteProductIds ?? [],
-        isPhoneVerified: Boolean(verifiedPhone && verifiedPhone === (parsed.customer ?? demoCustomer).phone)
+        ...(parsed.customer ?? defaultCustomer),
+        favoriteProductIds: (parsed.customer ?? defaultCustomer).favoriteProductIds ?? [],
+        isPhoneVerified: Boolean(verifiedPhone && verifiedPhone === (parsed.customer ?? defaultCustomer).phone)
       });
       setBlockedPhones(parsed.blockedPhones ?? []);
       setActivityLog(parsed.activityLog ?? []);
@@ -123,37 +118,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       activityLog,
       agents: deliveryAgents,
       lowStockProducts,
-      pendingOtp,
-      sendOtp: (phone) => {
-        const normalizedPhone = normalizePhone(phone);
-        const otp = "123456";
-        setPendingPhone(normalizedPhone);
-        setPendingOtp(otp);
-        setCustomer((current) => ({
-          ...current,
-          phone: normalizedPhone,
-          isPhoneVerified: false,
-          isBlocked: blockedPhones.includes(normalizedPhone)
-        }));
-        return otp;
-      },
-      verifyOtp: (otp) => {
-        const isValid = otp === pendingOtp && pendingPhone.length >= 10 && !blockedPhones.includes(pendingPhone);
-
-        if (isValid) {
-          setCustomer((current) => ({
-            ...current,
-            phone: pendingPhone,
-            isPhoneVerified: true,
-            isBlocked: false,
-            addresses: current.addresses.map((address) => ({ ...address, phone: pendingPhone }))
-          }));
-          rememberVerifiedPhone(pendingPhone);
-          setPendingOtp("");
-        }
-
-        return isValid;
-      },
       markPhoneVerified: (phone) => {
         const normalizedPhone = normalizePhone(phone);
         setCustomer((current) => ({
@@ -164,7 +128,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           addresses: current.addresses.map((address) => ({ ...address, phone: normalizedPhone }))
         }));
         rememberVerifiedPhone(normalizedPhone);
-        setPendingOtp("");
       },
       logoutCustomer: () => {
         setCustomer((current) => ({ ...current, isPhoneVerified: false }));
@@ -409,7 +372,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
       }
     }),
-    [activityLog, blockedPhones, cart, customer, lowStockProducts, orders, pendingOtp, pendingPhone, products]
+    [activityLog, blockedPhones, cart, customer, lowStockProducts, orders, products]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

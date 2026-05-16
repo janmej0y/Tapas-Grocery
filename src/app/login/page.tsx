@@ -10,7 +10,7 @@ import { useOtpCooldown } from "@/hooks/use-otp-cooldown";
 import { isAdminPhone } from "@/lib/admin-access";
 
 export default function LoginPage() {
-  const { customer, logoutCustomer, markPhoneVerified, pendingOtp, sendOtp, verifyOtp } = useStore();
+  const { customer, logoutCustomer, markPhoneVerified } = useStore();
   const [phone, setPhone] = useState(customer.phone);
   const [otp, setOtp] = useState("");
   const { isOtpCoolingDown, otpCooldown, startOtpCooldown } = useOtpCooldown();
@@ -42,9 +42,8 @@ export default function LoginPage() {
         throw new Error(data.error ?? "OTP could not be sent.");
       }
 
-      const code = data.provider === "demo" ? sendOtp(phone) : "";
       startOtpCooldown(60);
-      toast.success(data.provider === "demo" ? `Demo OTP sent: ${code}` : "OTP sent to your phone");
+      toast.success("OTP sent to your phone");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "OTP could not be sent.");
     }
@@ -61,10 +60,6 @@ export default function LoginPage() {
 
       if (!response.ok) {
         throw new Error(data.error ?? "Invalid OTP.");
-      }
-
-      if (data.provider === "demo" && !verifyOtp(otp)) {
-        throw new Error("Invalid demo OTP.");
       }
 
       markPhoneVerified(phone);
@@ -154,9 +149,7 @@ export default function LoginPage() {
                 ? "This mobile number is blocked by the store."
                 : isCurrentPhoneVerified
                   ? "You are logged in. You can place orders and view your account."
-                  : pendingOtp
-                    ? "OTP sent. Demo code is 123456."
-                    : "Login is required before placing an order."}
+                  : "Login is required before placing an order."}
             </p>
           </div>
 

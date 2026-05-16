@@ -45,9 +45,7 @@ export default function AdminPage() {
     lowStockProducts,
     markPhoneVerified,
     orders,
-    pendingOtp,
     products,
-    sendOtp,
     unblockPhone,
     updateDeliveryEta,
     updateOrderStatus,
@@ -112,12 +110,8 @@ export default function AdminPage() {
         throw new Error(data.error ?? "OTP could not be sent.");
       }
 
-      if (data.provider === "demo") {
-        sendOtp(adminPhone);
-      }
-
       startOtpCooldown(60);
-      toast.success(data.provider === "demo" ? "Demo owner OTP is 123456" : "Owner OTP sent by Supabase");
+      toast.success("Owner OTP sent by Supabase");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "OTP could not be sent.");
     }
@@ -139,10 +133,6 @@ export default function AdminPage() {
 
       if (!response.ok) {
         throw new Error(data.error ?? "Invalid OTP.");
-      }
-
-      if (data.provider === "demo" && !verifyLocalAdminOtp(adminOtp, pendingOtp)) {
-        throw new Error("Invalid demo OTP.");
       }
 
       if (data.role !== "admin") {
@@ -398,7 +388,7 @@ export default function AdminPage() {
             <button type="button" onClick={verifyAdminOtp} className="mt-3 w-full rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
               Verify owner phone
             </button>
-            <p className="mt-2 text-xs text-ink/60">Local demo OTP: 123456. With Supabase configured, the code is sent to this phone.</p>
+            <p className="mt-2 text-xs text-ink/60">The OTP is sent through Supabase phone authentication.</p>
           </div>
         </section>
       </main>
@@ -1030,10 +1020,6 @@ function orderMapUrl(order: Order) {
     ? `${latitude},${longitude}`
     : `${order.delivery_address.line1}, ${order.delivery_address.line2}, ${order.delivery_address.city}`;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-}
-
-function verifyLocalAdminOtp(otp: string, pendingOtp: string) {
-  return otp === pendingOtp || otp === "123456";
 }
 
 function urlBase64ToUint8Array(value: string) {

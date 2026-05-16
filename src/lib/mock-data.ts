@@ -514,8 +514,8 @@ export const promoCodes: PromoCode[] = [
   }
 ];
 
-export const demoCustomer: CustomerAccount = {
-  id: "cus-demo",
+export const defaultCustomer: CustomerAccount = {
+  id: "cus-default",
   name: "Tapas Customer",
   phone: "9876543210",
   isPhoneVerified: false,

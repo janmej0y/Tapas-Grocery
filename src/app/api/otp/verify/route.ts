@@ -41,16 +41,7 @@ export async function POST(request: Request) {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !anonKey) {
-    if (token === "123456") {
-      return NextResponse.json({
-        provider: "demo",
-        user: { id: "demo-user", phone: normalizedPhone },
-        role: isAdminPhone(normalizedPhone) ? "admin" : "customer",
-        session: null
-      });
-    }
-
-    return NextResponse.json({ error: "Invalid demo OTP." }, { status: 400 });
+    return NextResponse.json({ error: "Supabase phone OTP is not configured. Add Supabase keys before login can be used." }, { status: 500 });
   }
 
   const supabase = createClient(supabaseUrl, anonKey);

@@ -42,13 +42,10 @@ export function CheckoutPanel() {
     clearCart,
     customer,
     markPhoneVerified,
-    pendingOtp,
     removeFromCart,
     reorder,
-    sendOtp,
     updateCustomerAddress,
     updateQuantity,
-    verifyOtp
   } = useStore();
   const [phone, setPhone] = useState(customer.phone);
   const [otp, setOtp] = useState("");
@@ -188,10 +185,9 @@ export function CheckoutPanel() {
         throw new Error(data.error ?? "OTP could not be sent.");
       }
 
-      const code = data.provider === "demo" ? sendOtp(phone) : "";
       startOtpCooldown(60);
       setAddress((current) => ({ ...current, phone: phone.replace(/\D/g, "").slice(-10) }));
-      toast.success(data.provider === "demo" ? `Demo OTP sent: ${code}` : "OTP sent by Supabase Auth");
+      toast.success("OTP sent by Supabase Auth");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "OTP could not be sent.");
     }
@@ -208,10 +204,6 @@ export function CheckoutPanel() {
 
       if (!response.ok) {
         throw new Error(data.error ?? "Invalid OTP.");
-      }
-
-      if (data.provider === "demo" && !verifyOtp(otp)) {
-        throw new Error("Invalid demo OTP.");
       }
 
       markPhoneVerified(phone);
@@ -396,9 +388,7 @@ export function CheckoutPanel() {
                     ? "Blocked by admin"
                     : customer.isPhoneVerified && phone.replace(/\D/g, "").slice(-10) === customer.phone
                       ? "Phone verified. You can order anytime with this number."
-                      : pendingOtp
-                        ? "OTP sent. Demo code is 123456."
-                        : "Phone verification required only once."}
+                      : "Phone verification required only once."}
                 </p>
               </div>
             </section>
