@@ -7,6 +7,7 @@ import {
   Languages,
   LayoutGrid,
   LockKeyhole,
+  LogOut,
   Menu,
   ShieldCheck,
   Search,
@@ -27,16 +28,16 @@ const menuItems = [
   { href: "/#categories", icon: LayoutGrid, label: "Products" },
   { href: "/#product-tools", icon: Search, label: "Search & Filters" },
   { href: "/#assistant", icon: Bot, label: "Assistant" },
+  { href: "/login", icon: UserRoundCheck, label: "Login" },
   { href: "/account", icon: UserRound, label: "Account & Orders" },
   { href: "/cart", icon: ShoppingCart, label: "Cart & Checkout" },
-  { href: "/cart#phone-login", icon: UserRoundCheck, label: "Phone Login" },
   { href: "/policies", icon: ShieldCheck, label: "Policies" },
   { href: "/admin", icon: LockKeyhole, label: "Admin" }
 ];
 
 export function Navbar() {
   const { t, toggleLanguage } = useLanguage();
-  const { cart } = useStore();
+  const { cart, customer, logoutCustomer } = useStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const cartTotal = cart.reduce(
@@ -87,6 +88,10 @@ export function Navbar() {
               <LockKeyhole className="h-4 w-4" aria-hidden="true" />
               {t("adminLogin")}
             </Link>
+            <Link href="/login" className="hidden items-center gap-2 rounded-md border border-black/10 px-3 py-2 text-sm font-semibold hover:bg-leaf-50 md:inline-flex">
+              <UserRoundCheck className="h-4 w-4" aria-hidden="true" />
+              {customer.isPhoneVerified ? "Account" : "Login"}
+            </Link>
           </div>
         </nav>
       </header>
@@ -118,6 +123,10 @@ export function Navbar() {
             </div>
             <div className="p-4">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-ink/45">Menu</p>
+              <div className="mt-3 rounded-lg bg-leaf-50 p-3">
+                <p className="text-sm font-black text-ink">{customer.isPhoneVerified ? "Logged in" : "Not logged in"}</p>
+                <p className="mt-1 text-sm text-ink/60">{customer.isPhoneVerified ? customer.phone : "Login with mobile OTP to order faster."}</p>
+              </div>
               <div className="mt-3 grid gap-2">
                 {menuItems.map((item) => {
                   const Icon = item.icon;
@@ -138,6 +147,21 @@ export function Navbar() {
                     </Link>
                   );
                 })}
+                {customer.isPhoneVerified ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logoutCustomer();
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center justify-between rounded-lg border border-red-200 bg-white p-3 font-bold text-red-700 hover:bg-red-50"
+                  >
+                    <span className="inline-flex items-center gap-3">
+                      <LogOut className="h-5 w-5" />
+                      Logout
+                    </span>
+                  </button>
+                ) : null}
               </div>
             </div>
           </aside>
