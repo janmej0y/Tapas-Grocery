@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { AlertTriangle, Ban, BellRing, Download, Edit3, Eye, FileText, History, IndianRupee, LayoutDashboard, MessageCircle, PackagePlus, Save, Trash2, Truck, Undo2, Upload, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -58,6 +58,9 @@ export default function AdminPage() {
   const [etaText, setEtaText] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [adminEmail, setAdminEmail] = useState("borj18237@gmail.com");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const isAdmin = session?.user?.role === "admin";
   const revenue = useMemo(() => orders.reduce((total, order) => total + order.total_amount, 0), [orders]);
@@ -275,14 +278,71 @@ export default function AdminPage() {
   }
 
   if (!isAdmin) {
+    async function handleCredentialSignIn() {
+      setIsSigningIn(true);
+      const result = await signIn("credentials", {
+        email: adminEmail,
+        password: adminPassword,
+        redirect: false
+      });
+      setIsSigningIn(false);
+
+      if (result?.error) {
+        toast.error("Admin login failed. Use borj18237@gmail.com and the correct password.");
+        return;
+      }
+
+      toast.success("Admin login successful");
+    }
+
     return (
       <main className="mx-auto grid min-h-[calc(100vh-73px)] max-w-md place-items-center px-4 py-12">
         <section className="w-full rounded-lg border border-black/10 bg-white p-6 shadow-soft">
           <h1 className="text-3xl font-black text-ink">{t("adminLogin")}</h1>
-          <p className="mt-2 text-sm text-ink/65">Admin access is protected. Sign in with your configured admin account to unlock the dashboard.</p>
-          <a href="/api/auth/signin" className="mt-6 inline-flex w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
-            Open Admin Sign In
-          </a>
+          <p className="mt-2 text-sm text-ink/65">Only borj18237@gmail.com can unlock the dashboard.</p>
+          <div className="mt-6 space-y-3">
+            <button
+              type="button"
+              onClick={() => signIn("google", { callbackUrl: "/admin" })}
+              className="w-full rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700"
+            >
+              Continue with Google
+            </button>
+            <div className="relative py-2 text-center text-xs font-black uppercase tracking-[0.16em] text-ink/45">
+              Email password
+            </div>
+            <label className="block">
+              <span className="text-sm font-bold text-ink">Admin email</span>
+              <input
+                value={adminEmail}
+                onChange={(event) => setAdminEmail(event.target.value)}
+                className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2"
+                inputMode="email"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-bold text-ink">Admin password</span>
+              <input
+                value={adminPassword}
+                onChange={(event) => setAdminPassword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    handleCredentialSignIn();
+                  }
+                }}
+                className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2"
+                type="password"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={handleCredentialSignIn}
+              disabled={isSigningIn}
+              className="w-full rounded-md bg-ink px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              {isSigningIn ? "Signing in..." : "Login with Email"}
+            </button>
+          </div>
         </section>
       </main>
     );
