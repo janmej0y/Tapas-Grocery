@@ -84,7 +84,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .then((response) => response.json())
       .then((data: { source?: string; products?: Product[] }) => {
         if (data.source === "supabase" && data.products) {
-          setProducts(data.products);
+          setProducts(mergeSupabaseProductsWithSeedCatalog(data.products));
         }
       })
       .catch(() => undefined);
@@ -393,6 +393,20 @@ function mergeProductsWithSeedCatalog(storedProducts: Product[] | undefined) {
   });
 
   return Array.from(productsById.values());
+}
+
+function mergeSupabaseProductsWithSeedCatalog(supabaseProducts: Product[]) {
+  const productsByName = new Map(initialProducts.map((product) => [normalizeProductName(product.name), product]));
+
+  supabaseProducts.forEach((product) => {
+    productsByName.set(normalizeProductName(product.name), product);
+  });
+
+  return Array.from(productsByName.values());
+}
+
+function normalizeProductName(name: string) {
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function shouldUseSeedProductImage(imageUrl: string) {

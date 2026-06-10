@@ -63,6 +63,7 @@ export default function AdminPage() {
   const [adminPassword, setAdminPassword] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isEnablingPush, setIsEnablingPush] = useState(false);
+  const [isSeedingProducts, setIsSeedingProducts] = useState(false);
 
   const isAdmin = session?.user?.role === "admin";
   const revenue = useMemo(() => orders.reduce((total, order) => total + order.total_amount, 0), [orders]);
@@ -176,6 +177,36 @@ export default function AdminPage() {
     setDietaryText("");
     setUnitOptionsText("1 pack");
     setVariantPricesText("1 pack:0");
+  }
+
+  async function seedSupabaseProducts() {
+    if (isSeedingProducts) {
+      return;
+    }
+
+    setIsSeedingProducts(true);
+
+    try {
+      const response = await fetch("/api/products/seed", { method: "POST" });
+      const data = (await response.json()) as { inserted?: number; total?: number; error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Product seeding failed.");
+      }
+
+      toast.success(data.inserted ? `${data.inserted} products added to Supabase` : "Supabase already has the seed products");
+
+      const productsResponse = await fetch("/api/products");
+      const productsData = (await productsResponse.json()) as { source?: string; products?: Product[] };
+
+      if (productsData.products) {
+        importProducts(productsData.products);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Product seeding failed.");
+    } finally {
+      setIsSeedingProducts(false);
+    }
   }
 
   function editProduct(product: Product) {
@@ -394,6 +425,24 @@ export default function AdminPage() {
         <Metric title={t("products")} value={products.length.toString()} icon={<PackagePlus className="h-5 w-5" />} />
         <Metric title={t("orders")} value={orders.length.toString()} icon={<LayoutDashboard className="h-5 w-5" />} />
         <Metric title={t("revenue")} value={formatCurrency(revenue)} icon={<IndianRupee className="h-5 w-5" />} />
+      </section>
+
+      <section className="mx-auto mt-6 max-w-7xl rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-xl font-black text-ink">Seed full catalog</h2>
+            <p className="mt-1 text-sm text-ink/65">Add missing built-in grocery products to Supabase without deleting your manually uploaded products.</p>
+          </div>
+          <button
+            type="button"
+            onClick={seedSupabaseProducts}
+            disabled={isSeedingProducts}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+          >
+            <Upload className="h-4 w-4" />
+            {isSeedingProducts ? "Adding..." : "Add missing products"}
+          </button>
+        </div>
       </section>
 
       <section className="mx-auto mt-8 max-w-7xl rounded-lg border border-red-100 bg-white p-5 shadow-sm">
