@@ -3,12 +3,13 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { CheckCircle2, CreditCard, IndianRupee, LocateFixed, MapPin, Minus, Plus, RotateCcw, ShoppingCart, Trash2, WalletCards } from "lucide-react";
+import { BellRing, CheckCircle2, CreditCard, IndianRupee, LocateFixed, MapPin, Minus, Plus, RotateCcw, ShoppingCart, Trash2, WalletCards } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import { FreeDeliveryProgress } from "@/components/checkout/free-delivery-progress";
 import { useLanguage } from "@/components/language-provider";
 import { useStore } from "@/components/store-provider";
+import { subscribeToOrderNotifications } from "@/lib/client-notifications";
 import { calculateDeliveryFee } from "@/lib/delivery";
 import { formatCurrency } from "@/lib/format";
 import { buildWhatsAppOrderUrl, downloadInvoice } from "@/lib/invoice";
@@ -56,6 +57,7 @@ export function CheckoutPanel() {
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEnablingNotifications, setIsEnablingNotifications] = useState(false);
 
   const subtotal = useMemo(
     () => cart.reduce((total, item) => total + getUnitPrice(item.product.price, item.selectedUnit, item.product.variantPrices) * item.quantity, 0),
@@ -156,6 +158,19 @@ export function CheckoutPanel() {
 
     setAppliedPromo(result.promo.code);
     toast.success(result.message);
+  }
+
+  async function enableCustomerNotifications(order: Order) {
+    setIsEnablingNotifications(true);
+
+    try {
+      await subscribeToOrderNotifications(order.customer_phone, "customer");
+      toast.success("Order updates enabled on this device");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Notification setup failed.");
+    } finally {
+      setIsEnablingNotifications(false);
+    }
   }
 
   async function fillAddressFromCoordinates(latitude: number, longitude: number) {
@@ -523,6 +538,15 @@ export function CheckoutPanel() {
                 <Link href={`/orders/${placedOrder.order_id}`} className="rounded-md bg-ink px-3 py-2 text-center text-sm font-bold text-white hover:bg-leaf-700 sm:col-span-2">
                   Track order
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => enableCustomerNotifications(placedOrder)}
+                  disabled={isEnablingNotifications}
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-200 bg-leaf-50 px-3 py-2 text-sm font-bold text-leaf-800 hover:bg-leaf-100 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2"
+                >
+                  <BellRing className="h-4 w-4" />
+                  {isEnablingNotifications ? "Enabling..." : "Enable order updates"}
+                </button>
               </div>
             </div>
           ) : null}

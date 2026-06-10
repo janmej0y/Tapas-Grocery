@@ -9,6 +9,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Too
 import { useLanguage } from "@/components/language-provider";
 import { useStore } from "@/components/store-provider";
 import { ADMIN_PHONE } from "@/lib/admin-access";
+import { subscribeToOrderNotifications } from "@/lib/client-notifications";
 import { formatCurrency } from "@/lib/format";
 import { buildWhatsAppOrderUrl, downloadInvoice } from "@/lib/invoice";
 import type { Order, Product, ProductCategory } from "@/lib/types";
@@ -98,40 +99,35 @@ export default function AdminPage() {
     }
 
     try {
-      const permission = await Notification.requestPermission();
-
-      if (permission !== "granted") {
-        toast.error("Notification permission was not granted.");
-        return;
-      }
-
-      const registration = await navigator.serviceWorker.ready;
-      const existingSubscription = await registration.pushManager.getSubscription();
-      const subscription =
-        existingSubscription ??
-        (await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey)
-        }));
-
-      const response = await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: ADMIN_PHONE,
-          subscription
-        })
-      });
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Notification subscription failed.");
-      }
-
+      await subscribeToOrderNotifications(ADMIN_PHONE, "admin");
       toast.success("Admin order notifications enabled");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Notification setup failed.");
     }
+  }
+
+  function notifyCustomerOrderUpdate(order: Order, type: "status" | "eta" | "refund", options: { status?: Order["status"]; eta?: string; refundStatus?: Order["refund_status"]; reason?: string }) {
+    fetch("/api/push/order-update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type,
+        order,
+        ...options
+      })
+    })
+      .then(async (response) => {
+        const data = (await response.json()) as { error?: string; result?: { sent?: number; reason?: string } };
+
+        if (!response.ok) {
+          throw new Error(data.error ?? "Customer notification failed.");
+        }
+
+        if (data.result?.sent === 0) {
+          toast("Order updated, but customer notifications are not enabled on that phone.");
+        }
+      })
+      .catch((error) => toast.error(error instanceof Error ? error.message : "Customer notification failed."));
   }
 
   function submitProduct() {
@@ -683,7 +679,11 @@ export default function AdminPage() {
                   <td className="px-4 py-3">
                     <select
                       value={order.status}
-                      onChange={(event) => updateOrderStatus(order.order_id, event.target.value as Order["status"])}
+                      onChange={(event) => {
+                        const statusValue = event.target.value as Order["status"];
+                        updateOrderStatus(order.order_id, statusValue);
+                        notifyCustomerOrderUpdate({ ...order, status: statusValue }, "status", { status: statusValue });
+                      }}
                       className="rounded-md border border-black/10 px-2 py-2 text-sm font-bold"
                     >
                       {["Pending", "Accepted", "Preparing", "Out for delivery", "Delivered", "Cancelled", "Refunded"].map((status) => (
@@ -749,9 +749,9 @@ export default function AdminPage() {
                     type="button"
                     onClick={() => {
                       updateDeliveryEta(selectedOrder.order_id, etaText);
-                      setSelectedOrder((current) =>
-                        current ? { ...current, delivery_eta: etaText.trim() || "Waiting for owner confirmation" } : current
-                      );
+                      const nextOrder = { ...selectedOrder, delivery_eta: etaText.trim() || "Waiting for owner confirmation" };
+                      setSelectedOrder(nextOrder);
+                      notifyCustomerOrderUpdate(nextOrder, "eta", { eta: nextOrder.delivery_eta });
                       toast.success("Delivery time shared with customer");
                     }}
                     className="rounded-md bg-leaf-600 px-3 py-2 font-bold text-white hover:bg-leaf-700"
@@ -823,7 +823,10 @@ export default function AdminPage() {
                   onClick={() => {
                     updateOrderStatus(selectedOrder.order_id, "Cancelled");
                     updateRefundStatus(selectedOrder.order_id, "Requested", cancelReason);
-                    setSelectedOrder((current) => (current ? { ...current, status: "Cancelled", refund_status: "Requested", cancellation_reason: cancelReason } : current));
+                    const nextOrder = { ...selectedOrder, status: "Cancelled" as const, refund_status: "Requested" as const, cancellation_reason: cancelReason };
+                    setSelectedOrder(nextOrder);
+                    notifyCustomerOrderUpdate(nextOrder, "status", { status: "Cancelled" });
+                    notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Requested", reason: cancelReason });
                   }}
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-red-700 px-3 py-2 font-bold text-white hover:bg-red-800"
                 >
@@ -834,7 +837,9 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => {
                     updateRefundStatus(selectedOrder.order_id, "Approved", cancelReason);
-                    setSelectedOrder((current) => (current ? { ...current, refund_status: "Approved", cancellation_reason: cancelReason } : current));
+                    const nextOrder = { ...selectedOrder, refund_status: "Approved" as const, cancellation_reason: cancelReason };
+                    setSelectedOrder(nextOrder);
+                    notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Approved", reason: cancelReason });
                   }}
                   className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-leaf-100"
                 >
@@ -844,7 +849,9 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => {
                     updateRefundStatus(selectedOrder.order_id, "Refunded", cancelReason);
-                    setSelectedOrder((current) => (current ? { ...current, status: "Refunded", refund_status: "Refunded", cancellation_reason: cancelReason } : current));
+                    const nextOrder = { ...selectedOrder, status: "Refunded" as const, refund_status: "Refunded" as const, cancellation_reason: cancelReason };
+                    setSelectedOrder(nextOrder);
+                    notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Refunded", reason: cancelReason });
                   }}
                   className="rounded-md bg-ink px-3 py-2 font-bold text-white hover:bg-leaf-700"
                 >
@@ -976,19 +983,6 @@ function orderMapUrl(order: Order) {
     ? `${latitude},${longitude}`
     : `${order.delivery_address.line1}, ${order.delivery_address.line2}, ${order.delivery_address.city}`;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-}
-
-function urlBase64ToUint8Array(value: string) {
-  const padding = "=".repeat((4 - (value.length % 4)) % 4);
-  const base64 = `${value}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let index = 0; index < rawData.length; index += 1) {
-    outputArray[index] = rawData.charCodeAt(index);
-  }
-
-  return outputArray;
 }
 
 function buildDailyRevenue(orders: Order[]) {

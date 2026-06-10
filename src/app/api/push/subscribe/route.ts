@@ -23,13 +23,19 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as {
     phone?: string;
+    role?: "admin" | "customer";
     subscription?: BrowserPushSubscription;
   };
   const phone = normalizeLocalPhone(body.phone ?? "");
+  const role = body.role ?? "admin";
   const subscription = body.subscription;
 
-  if (!isAdminPhone(phone)) {
+  if (role === "admin" && !isAdminPhone(phone)) {
     return NextResponse.json({ error: "Only the owner phone can enable admin notifications." }, { status: 403 });
+  }
+
+  if (!phone || phone.length !== 10) {
+    return NextResponse.json({ error: "A valid 10 digit phone number is required for notifications." }, { status: 400 });
   }
 
   if (!subscription?.endpoint || !subscription.keys?.p256dh || !subscription.keys.auth) {
@@ -47,6 +53,7 @@ export async function POST(request: Request) {
       endpoint: subscription.endpoint,
       p256dh: subscription.keys.p256dh,
       auth: subscription.keys.auth,
+      // Existing schema name is admin_phone; it now stores the notification recipient phone.
       admin_phone: phone,
       user_agent: headerStore.get("user-agent"),
       updated_at: new Date().toISOString()
