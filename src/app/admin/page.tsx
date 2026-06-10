@@ -62,6 +62,7 @@ export default function AdminPage() {
   const [adminEmail, setAdminEmail] = useState("borj18237@gmail.com");
   const [adminPassword, setAdminPassword] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isEnablingPush, setIsEnablingPush] = useState(false);
 
   const isAdmin = session?.user?.role === "admin";
   const revenue = useMemo(() => orders.reduce((total, order) => total + order.total_amount, 0), [orders]);
@@ -81,6 +82,10 @@ export default function AdminPage() {
   }, []);
 
   async function enablePushNotifications() {
+    if (isEnablingPush) {
+      return;
+    }
+
     if (!isAdmin) {
       toast.error("Login as admin before enabling notifications.");
       return;
@@ -98,11 +103,15 @@ export default function AdminPage() {
       return;
     }
 
+    setIsEnablingPush(true);
+
     try {
       await subscribeToOrderNotifications(ADMIN_PHONE, "admin");
       toast.success("Admin order notifications enabled");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Notification setup failed.");
+    } finally {
+      setIsEnablingPush(false);
     }
   }
 
@@ -372,10 +381,11 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={enablePushNotifications}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700"
+            disabled={isEnablingPush}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             <BellRing className="h-4 w-4" />
-            Enable notifications
+            {isEnablingPush ? "Enabling..." : "Enable notifications"}
           </button>
         </div>
       </section>
