@@ -1,5 +1,5 @@
 const CACHE_NAME = "tapas-grocery-store-v2";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/icon.svg"];
+const APP_SHELL = ["/", "/manifest.webmanifest", "/icon.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -82,8 +82,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: "/icon.svg",
-      badge: "/icon.svg",
+      icon: "/icon.png",
+      badge: "/icon.png",
       tag: payload.tag,
       renotify: true,
       data: {

@@ -7,6 +7,7 @@ type LanguageContextValue = {
   language: Language;
   t: (key: keyof typeof translations.en) => string;
   productName: (name: string) => string;
+  setLanguage: (language: Language) => void;
   toggleLanguage: () => void;
 };
 
@@ -20,6 +21,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       language,
       t: (key) => translations[language][key],
       productName: (name) => (language === "bn" ? productTranslations[name] ?? name : name),
+      setLanguage,
       toggleLanguage: () => setLanguage((current) => (current === "en" ? "bn" : "en"))
     }),
     [language]

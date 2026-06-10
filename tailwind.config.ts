@@ -10,14 +10,14 @@ const config: Config = {
     extend: {
       colors: {
         leaf: {
-          50: "#f3fbf5",
-          100: "#dff5e5",
-          500: "#2f9e44",
-          600: "#25843a",
-          700: "#1f6b32"
+          50: "#ecfdf5",
+          100: "#d1fae5",
+          500: "#059669",
+          600: "#047857",
+          700: "#065f46"
         },
-        marigold: "#f59f00",
-        ink: "#17211b"
+        marigold: "#b45309",
+        ink: "#0f172a"
       },
       boxShadow: {
         soft: "0 18px 60px rgba(23, 33, 27, 0.12)"

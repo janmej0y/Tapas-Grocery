@@ -23,12 +23,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2f9e44"
+  themeColor: "#047857"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body className={`${inter.variable} ${bengali.variable} font-sans antialiased`}>
         <AppProviders>
           <PwaRegister />

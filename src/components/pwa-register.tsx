@@ -17,6 +17,10 @@ export function PwaRegister() {
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
 
   useEffect(() => {
+    if (process.env.NODE_ENV !== "production") {
+      return;
+    }
+
     function onBeforeInstallPrompt(event: Event) {
       event.preventDefault();
       const dismissedAt = Number(window.localStorage.getItem(INSTALL_DISMISSED_KEY) ?? 0);
@@ -29,17 +33,31 @@ export function PwaRegister() {
       }
     }
 
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-    window.addEventListener("appinstalled", () => {
+    function onAppInstalled() {
       setShowInstallPrompt(false);
       setInstallPrompt(null);
-    });
+    }
 
-    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
   }, []);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) {
+      return;
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .then(() => caches.keys())
+        .then((keys) => Promise.all(keys.filter((key) => key.startsWith("tapas-grocery-store")).map((key) => caches.delete(key))))
+        .catch(() => undefined);
       return;
     }
 

@@ -349,9 +349,10 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+    <main className="bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 rounded-lg border border-emerald-100 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
         <div>
+          <p className="text-sm font-black uppercase text-leaf-700">Owner operations</p>
           <h1 className="text-4xl font-black text-ink">{t("dashboard")}</h1>
           <p className="mt-2 text-ink/65">Secure owner controls for products, inventory, analytics, and incoming orders.</p>
         </div>
@@ -366,7 +367,7 @@ export default function AdminPage() {
         </button>
       </div>
 
-      <section className="mt-6 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+      <section className="mx-auto mt-6 max-w-7xl rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-xl font-black text-ink">Order notifications</h2>
@@ -383,13 +384,13 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section aria-label={t("overview")} className="mt-8 grid gap-4 sm:grid-cols-3">
+      <section aria-label={t("overview")} className="mx-auto mt-8 grid max-w-7xl gap-4 sm:grid-cols-3">
         <Metric title={t("products")} value={products.length.toString()} icon={<PackagePlus className="h-5 w-5" />} />
         <Metric title={t("orders")} value={orders.length.toString()} icon={<LayoutDashboard className="h-5 w-5" />} />
         <Metric title={t("revenue")} value={formatCurrency(revenue)} icon={<IndianRupee className="h-5 w-5" />} />
       </section>
 
-      <section className="mt-8 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+      <section className="mx-auto mt-8 max-w-7xl rounded-lg border border-red-100 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-3">
           <span className="rounded-md bg-red-50 p-2 text-red-700">
             <AlertTriangle className="h-5 w-5" />
@@ -412,7 +413,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="mt-8 grid gap-4 lg:grid-cols-[0.75fr_1.25fr]">
+      <section className="mx-auto mt-8 grid max-w-7xl gap-4 lg:grid-cols-[0.75fr_1.25fr]">
         <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">
@@ -459,7 +460,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="mt-8 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+      <section className="mx-auto mt-8 max-w-7xl rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
             <h2 className="text-2xl font-black text-ink">User blocking</h2>
@@ -500,7 +501,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="mt-8 grid gap-4 lg:grid-cols-3">
+      <section className="mx-auto mt-8 grid max-w-7xl gap-4 lg:grid-cols-3">
         <ChartPanel title="Daily revenue">
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={dailyRevenue}>
@@ -536,7 +537,7 @@ export default function AdminPage() {
         </ChartPanel>
       </section>
 
-      <section className="mt-10 grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+      <section className="mx-auto mt-10 grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
         <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <h2 className="text-2xl font-black text-ink">{editingProductId ? t("updateProduct") : t("addProduct")}</h2>
           <div className="mt-5 space-y-4">
@@ -610,7 +611,7 @@ export default function AdminPage() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] text-left text-sm">
-              <thead className="bg-leaf-50 text-ink">
+              <thead className="sticky top-0 bg-white text-ink shadow-[inset_0_-1px_0_#f4f4f5]">
                 <tr>
                   <th className="px-4 py-3">{t("name")}</th>
                   <th className="px-4 py-3">{t("category")}</th>
@@ -621,9 +622,9 @@ export default function AdminPage() {
                   <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/10">
+              <tbody className="divide-y divide-zinc-100">
                 {products.map((product) => (
-                  <tr key={product.id}>
+                  <tr key={product.id} className="odd:bg-white even:bg-zinc-50/70">
                     <td className="px-4 py-3 font-bold">{product.name}</td>
                     <td className="px-4 py-3">{t(product.category)}</td>
                     <td className="px-4 py-3">{product.brand}</td>
@@ -648,13 +649,13 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="mt-10 overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm">
+      <section className="mx-auto mt-10 max-w-7xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-black/10 p-5">
           <h2 className="text-2xl font-black text-ink">{t("orderManagement")}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-left text-sm">
-            <thead className="bg-leaf-50 text-ink">
+            <thead className="sticky top-0 bg-white text-ink shadow-[inset_0_-1px_0_#f4f4f5]">
               <tr>
                 <th className="px-4 py-3">ID</th>
                 <th className="px-4 py-3">{t("customerName")}</th>
@@ -668,9 +669,9 @@ export default function AdminPage() {
                 <th className="px-4 py-3">Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-black/10">
+            <tbody className="divide-y divide-zinc-100">
               {orders.map((order) => (
-                <tr key={order.order_id}>
+                <tr key={order.order_id} className="odd:bg-white even:bg-zinc-50/70">
                   <td className="px-4 py-3 font-bold">{order.order_id}</td>
                   <td className="px-4 py-3">{order.customer_name}</td>
                   <td className="px-4 py-3">{order.items_ordered}</td>
@@ -860,20 +861,26 @@ export default function AdminPage() {
 
 function Metric({ icon, title, value }: { icon: ReactNode; title: string; value: string }) {
   return (
-    <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+    <div className="rounded-lg border border-emerald-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-bold text-ink/65">{title}</p>
         <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">{icon}</span>
       </div>
       <p className="mt-4 text-3xl font-black text-ink">{value}</p>
+      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div className="h-full w-2/3 rounded-full bg-leaf-600" />
+      </div>
     </div>
   );
 }
 
 function ChartPanel({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-black text-ink">{title}</h2>
+    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-black text-ink">{title}</h2>
+        <span className="rounded-full bg-leaf-50 px-2 py-1 text-xs font-black text-leaf-700">Live</span>
+      </div>
       <div className="mt-4">{children}</div>
     </div>
   );
@@ -890,7 +897,7 @@ function AdminInput({ label, onChange, type = "text", value }: { label: string; 
 
 function DetailBlock({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <div className="rounded-lg border border-black/10 bg-leaf-50 p-4 text-sm">
+    <div className="rounded-lg border border-emerald-100 bg-leaf-50 p-4 text-sm">
       <h3 className="mb-2 font-black text-ink">{title}</h3>
       <div className="space-y-1 text-ink/75">{children}</div>
     </div>

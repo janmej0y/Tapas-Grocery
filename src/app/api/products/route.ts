@@ -14,7 +14,7 @@ export async function GET() {
   const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message, source: "supabase", products: initialProducts }, { status: 500 });
+    return NextResponse.json({ error: error.message, source: "mock", products: initialProducts });
   }
 
   return NextResponse.json({ source: "supabase", products: (data ?? []).map(mapProductRow) });

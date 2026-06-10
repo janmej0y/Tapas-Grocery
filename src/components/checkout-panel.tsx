@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { CreditCard, IndianRupee, LocateFixed, MapPin, Minus, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { CheckCircle2, CreditCard, IndianRupee, LocateFixed, MapPin, Minus, Plus, RotateCcw, ShoppingCart, Trash2, WalletCards } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import { FreeDeliveryProgress } from "@/components/checkout/free-delivery-progress";
 import { useLanguage } from "@/components/language-provider";
 import { useStore } from "@/components/store-provider";
 import { calculateDeliveryFee } from "@/lib/delivery";
@@ -243,13 +245,24 @@ export function CheckoutPanel() {
   }
 
   return (
-    <section id="cart" className="scroll-mt-24 bg-white py-8 sm:py-10">
+    <section id="cart" className="scroll-mt-24 bg-slate-50 py-8 sm:py-10">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
         <div>
           <h2 className="text-3xl font-black text-ink">{t("cartTitle")}</h2>
-          <div className="mt-6 overflow-hidden rounded-lg border border-black/10">
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <CheckoutStep icon={<ShoppingCart className="h-4 w-4" />} active={cart.length > 0} title="Cart" text={`${cart.length} items`} />
+            <CheckoutStep icon={<MapPin className="h-4 w-4" />} active={isAddressComplete} title="Address" text={isAddressComplete ? "Ready" : "Required"} />
+            <CheckoutStep icon={<WalletCards className="h-4 w-4" />} active={canOrder} title="Confirm" text={paymentMethod === "COD" ? "COD" : "Payment"} />
+          </div>
+          <div className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
             {cart.length === 0 ? (
-              <p className="p-6 text-ink/65">{t("emptyCart")}</p>
+              <div className="p-6">
+                <p className="font-black text-ink">{t("emptyCart")}</p>
+                <div className="mt-4 space-y-3">
+                  <div className="skeleton h-16 rounded-lg" />
+                  <div className="skeleton h-16 rounded-lg" />
+                </div>
+              </div>
             ) : (
               <div className="divide-y divide-black/10">
                 {cart.map((item) => (
@@ -327,8 +340,11 @@ export function CheckoutPanel() {
           </div>
         </div>
 
-        <aside className="self-start rounded-lg border border-black/10 bg-leaf-50 p-5 shadow-sm">
+        <aside className="self-start rounded-lg border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24">
           <h2 className="text-2xl font-black text-ink">{t("checkout")}</h2>
+          <div className="mt-4">
+            <FreeDeliveryProgress cartTotal={discountedSubtotal} distanceKm={address.distanceKm} />
+          </div>
           <div className="mt-5 space-y-4">
             <div>
               <span className="text-sm font-bold text-ink">Saved or manual address</span>
@@ -513,6 +529,22 @@ export function CheckoutPanel() {
         </aside>
       </div>
     </section>
+  );
+}
+
+function CheckoutStep({ active, icon, text, title }: { active: boolean; icon: ReactNode; text: string; title: string }) {
+  return (
+    <div className={`rounded-lg border p-3 ${active ? "border-leaf-200 bg-leaf-50" : "border-slate-200 bg-white"}`}>
+      <div className="flex items-center gap-2">
+        <span className={`grid h-8 w-8 place-items-center rounded-md ${active ? "bg-leaf-600 text-white" : "bg-slate-100 text-ink/55"}`}>
+          {active ? <CheckCircle2 className="h-4 w-4" /> : icon}
+        </span>
+        <div>
+          <p className="text-sm font-black text-ink">{title}</p>
+          <p className="text-xs font-semibold text-ink/55">{text}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 

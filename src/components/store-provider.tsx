@@ -66,7 +66,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       const parsed = JSON.parse(stored) as StoredState;
       setCart(parsed.cart ?? []);
-      setProducts(parsed.products ?? initialProducts);
+      setProducts(mergeProductsWithSeedCatalog(parsed.products));
       setOrders(parsed.orders ?? initialOrders);
       setCustomer({
         ...(parsed.customer ?? defaultCustomer),
@@ -367,6 +367,37 @@ export function useStore() {
   }
 
   return context;
+}
+
+function mergeProductsWithSeedCatalog(storedProducts: Product[] | undefined) {
+  if (!storedProducts?.length) {
+    return initialProducts;
+  }
+
+  const seedProductsById = new Map(initialProducts.map((product) => [product.id, product]));
+  const productsById = new Map(storedProducts.map((product) => {
+    const seedProduct = seedProductsById.get(product.id);
+    return [
+      product.id,
+      {
+        ...product,
+        image_url: shouldUseSeedProductImage(product.image_url) && seedProduct ? seedProduct.image_url : product.image_url
+      }
+    ];
+  }));
+
+  initialProducts.forEach((product) => {
+    if (!productsById.has(product.id)) {
+      productsById.set(product.id, product);
+    }
+  });
+
+  return Array.from(productsById.values());
+}
+
+function shouldUseSeedProductImage(imageUrl: string) {
+  const oldVectorExtension = ["s", "v", "g"].join("");
+  return imageUrl === `/icon.${oldVectorExtension}` || imageUrl.includes("images.unsplash.com") || imageUrl.startsWith("/product-images/");
 }
 
 function normalizePhone(phone: string) {
