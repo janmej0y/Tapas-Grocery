@@ -91,6 +91,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    fetch("/api/orders")
+      .then((response) => response.json())
+      .then((data: { source?: string; orders?: Order[] }) => {
+        if (data.source === "supabase" && data.orders) {
+          setOrders((items) => mergeOrders(items, data.orders!));
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
     const nextState: StoredState = {
       blockedPhones,
       cart,
@@ -272,18 +283,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateOrderStatus: (orderId, status) => {
         setOrders((items) => items.map((order) => (order.order_id === orderId ? { ...order, status } : order)));
         pushActivity(setActivityLog, "Order status changed", `${orderId} is now ${status}`);
+        fetch("/api/orders", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, status })
+        }).catch(() => undefined);
       },
       assignDeliveryAgent: (orderId, agentId) => {
         setOrders((items) =>
           items.map((order) => (order.order_id === orderId ? { ...order, assigned_agent_id: agentId || undefined } : order))
         );
         pushActivity(setActivityLog, "Delivery agent assigned", `${orderId} assigned to ${agentId || "unassigned"}`);
+        fetch("/api/orders", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, assignedAgentId: agentId || null })
+        }).catch(() => undefined);
       },
       updateDeliveryEta: (orderId, eta) => {
+        const deliveryEta = eta.trim() || "Waiting for owner confirmation";
         setOrders((items) =>
-          items.map((order) => (order.order_id === orderId ? { ...order, delivery_eta: eta.trim() || "Waiting for owner confirmation" } : order))
+          items.map((order) => (order.order_id === orderId ? { ...order, delivery_eta: deliveryEta } : order))
         );
-        pushActivity(setActivityLog, "Delivery ETA updated", `${orderId}: ${eta.trim() || "Waiting for owner confirmation"}`);
+        pushActivity(setActivityLog, "Delivery ETA updated", `${orderId}: ${deliveryEta}`);
+        fetch("/api/orders", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, deliveryEta })
+        }).catch(() => undefined);
       },
       updateRefundStatus: (orderId, refundStatus, reason) => {
         setOrders((items) =>
@@ -299,6 +326,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           )
         );
         pushActivity(setActivityLog, "Refund updated", `${orderId}: ${refundStatus}${reason ? ` - ${reason}` : ""}`);
+        fetch("/api/orders", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId,
+            refundStatus,
+            cancellationReason: reason,
+            status: refundStatus === "Refunded" ? "Refunded" : refundStatus === "Requested" ? "Cancelled" : undefined
+          })
+        }).catch(() => undefined);
       },
       addProductReview: (productId, review) => {
         setProducts((items) =>
@@ -403,6 +440,16 @@ function mergeSupabaseProductsWithSeedCatalog(supabaseProducts: Product[]) {
   });
 
   return Array.from(productsByName.values());
+}
+
+function mergeOrders(localOrders: Order[], supabaseOrders: Order[]) {
+  const ordersById = new Map(localOrders.map((order) => [order.order_id, order]));
+
+  supabaseOrders.forEach((order) => {
+    ordersById.set(order.order_id, order);
+  });
+
+  return Array.from(ordersById.values()).sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
 }
 
 function normalizeProductName(name: string) {

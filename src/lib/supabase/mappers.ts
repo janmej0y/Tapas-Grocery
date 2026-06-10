@@ -16,6 +16,32 @@ type ProductRow = {
   variant_prices: Record<string, number>;
 };
 
+type OrderRow = {
+  public_order_id: string;
+  customer_name: string;
+  customer_phone: string;
+  delivery_address: UserAddress;
+  subtotal: number;
+  discount_amount: number;
+  delivery_fee: number;
+  total_amount: number;
+  delivery_distance: number;
+  payment_method: Order["payment_method"];
+  payment_status: Order["payment_status"];
+  status: Order["status"];
+  assigned_agent_id?: string;
+  delivery_eta: string;
+  refund_status: Order["refund_status"];
+  cancellation_reason?: string;
+  invoice_number: string;
+  created_at: string;
+  order_items?: Array<{
+    product_name: string;
+    selected_unit: string;
+    quantity: number;
+  }>;
+};
+
 export function mapProductRow(row: ProductRow): Product {
   return {
     id: row.id,
@@ -32,6 +58,30 @@ export function mapProductRow(row: ProductRow): Product {
     unitOptions: row.unit_options ?? [],
     variantPrices: row.variant_prices ?? {},
     reviews: []
+  };
+}
+
+export function mapOrderRow(row: OrderRow): Order {
+  return {
+    order_id: row.public_order_id,
+    customer_name: row.customer_name,
+    customer_phone: row.customer_phone,
+    delivery_address: row.delivery_address,
+    items_ordered: formatOrderItems(row.order_items ?? []),
+    subtotal: Number(row.subtotal),
+    discount_amount: Number(row.discount_amount),
+    total_amount: Number(row.total_amount),
+    delivery_fee: Number(row.delivery_fee),
+    delivery_distance: Number(row.delivery_distance),
+    payment_method: row.payment_method,
+    payment_status: row.payment_status,
+    status: row.status,
+    assigned_agent_id: row.assigned_agent_id,
+    delivery_eta: row.delivery_eta,
+    refund_status: row.refund_status,
+    cancellation_reason: row.cancellation_reason,
+    invoice_number: row.invoice_number,
+    created_at: row.created_at
   };
 }
 
@@ -57,6 +107,10 @@ export function orderToSupabaseRow(order: Order, userId?: string) {
     invoice_number: order.invoice_number,
     created_at: order.created_at
   };
+}
+
+function formatOrderItems(items: Array<{ product_name: string; selected_unit: string; quantity: number }>) {
+  return items.map((item) => `${item.product_name} (${item.selected_unit}) x ${item.quantity}`).join(", ");
 }
 
 export function profileFromPhone(userId: string, phone: string) {

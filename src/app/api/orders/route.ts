@@ -5,8 +5,8 @@ import { applyPromoCode } from "@/lib/promos";
 import { sendAdminOrderNotification } from "@/lib/push";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { orderToSupabaseRow } from "@/lib/supabase/mappers";
-import type { Order, UserAddress } from "@/lib/types";
+import { mapOrderRow, orderToSupabaseRow } from "@/lib/supabase/mappers";
+import type { Order, OrderStatus, RefundStatus, UserAddress } from "@/lib/types";
 
 type CheckoutItem = {
   productId: string;
@@ -15,6 +15,25 @@ type CheckoutItem = {
   price: number;
   quantity: number;
 };
+
+export async function GET() {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return NextResponse.json({ source: "mock", orders: [] });
+  }
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, order_items(product_name, selected_unit, quantity)")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message, source: "mock", orders: [] }, { status: 400 });
+  }
+
+  return NextResponse.json({ source: "supabase", orders: (data ?? []).map(mapOrderRow) });
+}
 
 export async function POST(request: Request) {
   const headerStore = await headers();
@@ -88,13 +107,12 @@ export async function POST(request: Request) {
     }
 
     const orderId = insertedOrder?.id;
-    const uuidItems = body.items.filter((item) => isUuid(item.productId));
 
-    if (orderId && uuidItems.length > 0) {
+    if (orderId && body.items.length > 0) {
       const { error: itemsError } = await supabase.from("order_items").insert(
-        uuidItems.map((item) => ({
+        body.items.map((item) => ({
           order_id: orderId,
-          product_id: item.productId,
+          product_id: isUuid(item.productId) ? item.productId : null,
           product_name: item.name,
           selected_unit: item.selectedUnit ?? "1",
           quantity: item.quantity,
@@ -111,6 +129,56 @@ export async function POST(request: Request) {
   sendAdminOrderNotification(order).catch(() => undefined);
 
   return NextResponse.json({ order });
+}
+
+export async function PATCH(request: Request) {
+  const supabase = createSupabaseAdminClient();
+  const body = (await request.json()) as {
+    orderId?: string;
+    status?: OrderStatus;
+    deliveryEta?: string;
+    refundStatus?: RefundStatus;
+    cancellationReason?: string;
+    assignedAgentId?: string | null;
+  };
+
+  if (!body.orderId) {
+    return NextResponse.json({ error: "Order id is required." }, { status: 400 });
+  }
+
+  if (!supabase) {
+    return NextResponse.json({ source: "mock", orderId: body.orderId });
+  }
+
+  const updates: Record<string, string | null> = {};
+
+  if (body.status) {
+    updates.status = body.status;
+  }
+
+  if (typeof body.deliveryEta === "string") {
+    updates.delivery_eta = body.deliveryEta;
+  }
+
+  if (body.refundStatus) {
+    updates.refund_status = body.refundStatus;
+  }
+
+  if (typeof body.cancellationReason === "string") {
+    updates.cancellation_reason = body.cancellationReason;
+  }
+
+  if ("assignedAgentId" in body) {
+    updates.assigned_agent_id = body.assignedAgentId || null;
+  }
+
+  const { error } = await supabase.from("orders").update(updates).eq("public_order_id", body.orderId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true });
 }
 
 function isUuid(value: string) {

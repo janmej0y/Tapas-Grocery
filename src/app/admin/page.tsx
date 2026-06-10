@@ -29,6 +29,16 @@ const emptyProduct: Omit<Product, "id"> = {
   reviews: []
 };
 
+type AdminSection = "orders" | "products" | "analytics" | "users" | "overview";
+
+const adminSections: Array<{ id: AdminSection; label: string }> = [
+  { id: "orders", label: "Orders" },
+  { id: "products", label: "Products" },
+  { id: "analytics", label: "Analytics" },
+  { id: "users", label: "Users" },
+  { id: "overview", label: "Overview" }
+];
+
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const { t } = useLanguage();
@@ -64,6 +74,7 @@ export default function AdminPage() {
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isEnablingPush, setIsEnablingPush] = useState(false);
   const [isSeedingProducts, setIsSeedingProducts] = useState(false);
+  const [activeAdminSection, setActiveAdminSection] = useState<AdminSection>("orders");
 
   const isAdmin = session?.user?.role === "admin";
   const revenue = useMemo(() => orders.reduce((total, order) => total + order.total_amount, 0), [orders]);
@@ -403,7 +414,22 @@ export default function AdminPage() {
         </button>
       </div>
 
-      <section className="mx-auto mt-6 max-w-7xl rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
+      <nav className="sticky top-[73px] z-30 mx-auto mt-4 flex max-w-7xl gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm [scrollbar-width:none]">
+        {adminSections.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => setActiveAdminSection(section.id)}
+            className={`min-h-11 shrink-0 rounded-md px-4 text-sm font-black transition ${
+              activeAdminSection === section.id ? "bg-leaf-600 text-white" : "bg-slate-50 text-ink hover:bg-leaf-50"
+            }`}
+          >
+            {section.label}
+          </button>
+        ))}
+      </nav>
+
+      <section className={`mx-auto mt-6 max-w-7xl rounded-lg border border-emerald-100 bg-white p-5 shadow-sm ${activeAdminSection === "overview" ? "" : "hidden"}`}>
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-xl font-black text-ink">Order notifications</h2>
@@ -421,13 +447,13 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section aria-label={t("overview")} className="mx-auto mt-8 grid max-w-7xl gap-4 sm:grid-cols-3">
+      <section aria-label={t("overview")} className={`mx-auto mt-8 max-w-7xl gap-4 sm:grid-cols-3 ${activeAdminSection === "overview" ? "grid" : "hidden"}`}>
         <Metric title={t("products")} value={products.length.toString()} icon={<PackagePlus className="h-5 w-5" />} />
         <Metric title={t("orders")} value={orders.length.toString()} icon={<LayoutDashboard className="h-5 w-5" />} />
         <Metric title={t("revenue")} value={formatCurrency(revenue)} icon={<IndianRupee className="h-5 w-5" />} />
       </section>
 
-      <section className="mx-auto mt-6 max-w-7xl rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
+      <section className={`mx-auto mt-6 max-w-7xl rounded-lg border border-emerald-100 bg-white p-5 shadow-sm ${activeAdminSection === "products" ? "" : "hidden"}`}>
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-xl font-black text-ink">Seed full catalog</h2>
@@ -445,7 +471,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-8 max-w-7xl rounded-lg border border-red-100 bg-white p-5 shadow-sm">
+      <section className={`mx-auto mt-8 max-w-7xl rounded-lg border border-red-100 bg-white p-5 shadow-sm ${activeAdminSection === "products" ? "" : "hidden"}`}>
         <div className="flex items-center gap-3">
           <span className="rounded-md bg-red-50 p-2 text-red-700">
             <AlertTriangle className="h-5 w-5" />
@@ -468,7 +494,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-8 grid max-w-7xl gap-4 lg:grid-cols-[0.75fr_1.25fr]">
+      <section className={`mx-auto mt-8 max-w-7xl gap-4 lg:grid-cols-[0.75fr_1.25fr] ${activeAdminSection === "products" ? "grid" : "hidden"}`}>
         <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">
@@ -515,7 +541,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-8 max-w-7xl rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <section className={`mx-auto mt-8 max-w-7xl rounded-lg border border-slate-200 bg-white p-5 shadow-sm ${activeAdminSection === "users" ? "" : "hidden"}`}>
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
             <h2 className="text-2xl font-black text-ink">User blocking</h2>
@@ -556,7 +582,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-8 grid max-w-7xl gap-4 lg:grid-cols-3">
+      <section className={`mx-auto mt-8 max-w-7xl gap-4 lg:grid-cols-3 ${activeAdminSection === "analytics" ? "grid" : "hidden"}`}>
         <ChartPanel title="Daily revenue">
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={dailyRevenue}>
@@ -592,7 +618,7 @@ export default function AdminPage() {
         </ChartPanel>
       </section>
 
-      <section className="mx-auto mt-10 grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+      <section className={`mx-auto mt-10 max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr] ${activeAdminSection === "products" ? "grid" : "hidden"}`}>
         <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <h2 className="text-2xl font-black text-ink">{editingProductId ? t("updateProduct") : t("addProduct")}</h2>
           <div className="mt-5 space-y-4">
@@ -704,7 +730,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-10 max-w-7xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <section className={`mx-auto mt-10 max-w-7xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${activeAdminSection === "orders" ? "" : "hidden"}`}>
         <div className="border-b border-black/10 p-5">
           <h2 className="text-2xl font-black text-ink">{t("orderManagement")}</h2>
         </div>
