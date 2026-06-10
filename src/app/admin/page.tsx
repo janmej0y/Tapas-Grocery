@@ -889,59 +889,85 @@ export default function AdminPage() {
             <DetailBlock title="Items">
               <p>{selectedOrder.items_ordered}</p>
             </DetailBlock>
-            <div className="mt-4 rounded-lg border border-black/10 bg-leaf-50 p-4">
-              <h3 className="font-black text-ink">Invoice, WhatsApp, cancellation, refund</h3>
-              <div className="mt-3 grid gap-2 md:grid-cols-2">
-                <button type="button" onClick={() => downloadInvoice(selectedOrder)} className="inline-flex items-center justify-center gap-2 rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-leaf-100">
+            <div className="mt-4 overflow-hidden rounded-lg border border-emerald-200 bg-white shadow-sm">
+              <div className="border-b border-emerald-100 bg-leaf-700 p-4 text-white">
+                <p className="text-xs font-black uppercase text-white/75">Customer invoice</p>
+                <div className="mt-1 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+                  <div>
+                    <h3 className="text-2xl font-black">{selectedOrder.invoice_number}</h3>
+                    <p className="text-sm font-semibold text-white/80">Order {selectedOrder.order_id}</p>
+                  </div>
+                  <p className="text-3xl font-black">{formatCurrency(selectedOrder.total_amount)}</p>
+                </div>
+              </div>
+              <div className="grid gap-3 p-4 md:grid-cols-3">
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-xs font-black uppercase text-ink/45">Subtotal</p>
+                  <p className="mt-1 font-black text-ink">{formatCurrency(selectedOrder.subtotal)}</p>
+                </div>
+                <div className="rounded-lg bg-amber-50 p-3">
+                  <p className="text-xs font-black uppercase text-amber-700">Discount</p>
+                  <p className="mt-1 font-black text-ink">{formatCurrency(selectedOrder.discount_amount)}</p>
+                </div>
+                <div className="rounded-lg bg-leaf-50 p-3">
+                  <p className="text-xs font-black uppercase text-leaf-700">Delivery</p>
+                  <p className="mt-1 font-black text-ink">{formatCurrency(selectedOrder.delivery_fee)}</p>
+                </div>
+              </div>
+              <div className="grid gap-2 border-t border-emerald-100 bg-leaf-50 p-4 md:grid-cols-2">
+                <button type="button" onClick={() => downloadInvoice(selectedOrder)} className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-3 py-3 font-bold text-white hover:bg-leaf-700">
                   <FileText className="h-4 w-4" />
-                  Download invoice
+                  Open professional invoice
                 </button>
-                <a href={buildWhatsAppOrderUrl(selectedOrder)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-3 py-2 font-bold text-white hover:bg-leaf-700">
+                <a href={buildWhatsAppOrderUrl(selectedOrder)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-3 py-3 font-bold text-white hover:bg-leaf-700">
                   <MessageCircle className="h-4 w-4" />
                   WhatsApp customer
                 </a>
               </div>
-              <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="mt-3 w-full rounded-md border border-black/10 bg-white px-3 py-2" placeholder="Cancellation/refund reason" />
-              <div className="mt-3 grid gap-2 md:grid-cols-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateOrderStatus(selectedOrder.order_id, "Cancelled");
-                    updateRefundStatus(selectedOrder.order_id, "Requested", cancelReason);
-                    const nextOrder = { ...selectedOrder, status: "Cancelled" as const, refund_status: "Requested" as const, cancellation_reason: cancelReason };
-                    setSelectedOrder(nextOrder);
-                    notifyCustomerOrderUpdate(nextOrder, "status", { status: "Cancelled" });
-                    notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Requested", reason: cancelReason });
-                  }}
-                  className="inline-flex items-center justify-center gap-2 rounded-md bg-red-700 px-3 py-2 font-bold text-white hover:bg-red-800"
-                >
-                  <XCircle className="h-4 w-4" />
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateRefundStatus(selectedOrder.order_id, "Approved", cancelReason);
-                    const nextOrder = { ...selectedOrder, refund_status: "Approved" as const, cancellation_reason: cancelReason };
-                    setSelectedOrder(nextOrder);
-                    notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Approved", reason: cancelReason });
-                  }}
-                  className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-leaf-100"
-                >
-                  Approve refund
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateRefundStatus(selectedOrder.order_id, "Refunded", cancelReason);
-                    const nextOrder = { ...selectedOrder, status: "Refunded" as const, refund_status: "Refunded" as const, cancellation_reason: cancelReason };
-                    setSelectedOrder(nextOrder);
-                    notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Refunded", reason: cancelReason });
-                  }}
-                  className="rounded-md bg-ink px-3 py-2 font-bold text-white hover:bg-leaf-700"
-                >
-                  Mark refunded
-                </button>
+              <div className="border-t border-emerald-100 p-4">
+                <p className="text-sm font-black text-ink">Cancellation and refund actions</p>
+                <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="mt-3 w-full rounded-md border border-black/10 bg-white px-3 py-2" placeholder="Cancellation/refund reason" />
+                <div className="mt-3 grid gap-2 md:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateOrderStatus(selectedOrder.order_id, "Cancelled");
+                      updateRefundStatus(selectedOrder.order_id, "Requested", cancelReason);
+                      const nextOrder = { ...selectedOrder, status: "Cancelled" as const, refund_status: "Requested" as const, cancellation_reason: cancelReason };
+                      setSelectedOrder(nextOrder);
+                      notifyCustomerOrderUpdate(nextOrder, "status", { status: "Cancelled" });
+                      notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Requested", reason: cancelReason });
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-md bg-red-700 px-3 py-2 font-bold text-white hover:bg-red-800"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateRefundStatus(selectedOrder.order_id, "Approved", cancelReason);
+                      const nextOrder = { ...selectedOrder, refund_status: "Approved" as const, cancellation_reason: cancelReason };
+                      setSelectedOrder(nextOrder);
+                      notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Approved", reason: cancelReason });
+                    }}
+                    className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-leaf-100"
+                  >
+                    Approve refund
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateRefundStatus(selectedOrder.order_id, "Refunded", cancelReason);
+                      const nextOrder = { ...selectedOrder, status: "Refunded" as const, refund_status: "Refunded" as const, cancellation_reason: cancelReason };
+                      setSelectedOrder(nextOrder);
+                      notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Refunded", reason: cancelReason });
+                    }}
+                    className="rounded-md bg-ink px-3 py-2 font-bold text-white hover:bg-leaf-700"
+                  >
+                    Mark refunded
+                  </button>
+                </div>
               </div>
             </div>
           </section>
