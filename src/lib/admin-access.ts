@@ -1,4 +1,4 @@
-export const ADMIN_PHONE = "7477661933";
+export const ADMIN_PHONE = normalizeLocalPhone(process.env.NEXT_PUBLIC_ADMIN_PHONE ?? process.env.ADMIN_PHONE ?? "7477661933");
 
 export function normalizeLocalPhone(phone: string) {
   return phone.replace(/\D/g, "").slice(-10);

@@ -48,21 +48,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Supabase service role key is required for push subscriptions." }, { status: 503 });
   }
 
-  const { error } = await supabase.from("push_subscriptions").upsert(
-    {
-      endpoint: subscription.endpoint,
-      p256dh: subscription.keys.p256dh,
-      auth: subscription.keys.auth,
-      // Existing schema name is admin_phone; it now stores the notification recipient phone.
-      admin_phone: phone,
-      user_agent: headerStore.get("user-agent"),
-      updated_at: new Date().toISOString()
-    },
-    { onConflict: "endpoint" }
-  );
+  try {
+    const { error } = await supabase.from("push_subscriptions").upsert(
+      {
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+        // Existing schema name is admin_phone; it now stores the notification recipient phone.
+        admin_phone: phone,
+        user_agent: headerStore.get("user-agent"),
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "endpoint" }
+    );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) {
+      return NextResponse.json({ error: `Push subscription could not be saved: ${error.message}` }, { status: 400 });
+    }
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: "Push subscription could not reach Supabase. Check NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and the push_subscriptions table on the live deployment.",
+        detail: error instanceof Error ? error.message : "Unknown Supabase connection error"
+      },
+      { status: 503 }
+    );
   }
 
   return NextResponse.json({ ok: true });
