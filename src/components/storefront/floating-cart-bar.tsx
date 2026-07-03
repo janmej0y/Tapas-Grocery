@@ -25,7 +25,7 @@ export function FloatingCartBar({ hidden = false }: { hidden?: boolean }) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 left-4 right-4 z-40 inline-flex items-center justify-between rounded-lg bg-leaf-600 px-4 py-3 font-black text-white shadow-soft transition-all duration-150 hover:bg-leaf-700 active:scale-[0.98] sm:left-auto sm:right-6 sm:w-96"
+        className="fixed bottom-4 left-4 right-4 z-40 inline-flex items-center justify-between rounded-lg bg-[#15803d] px-4 py-3 font-black text-white shadow-soft transition-all duration-150 hover:bg-emerald-800 active:scale-[0.98] sm:left-auto sm:right-6 sm:w-96"
       >
         <span className="inline-flex items-center gap-2">
           <ShoppingCart className="h-5 w-5" />
@@ -36,7 +36,7 @@ export function FloatingCartBar({ hidden = false }: { hidden?: boolean }) {
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-[85] bg-black/40" role="presentation" onClick={() => setIsOpen(false)}>
+        <div className="fixed inset-0 z-[85] bg-black/40 backdrop-blur-xs" role="presentation" onClick={() => setIsOpen(false)}>
           <aside
             className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-hidden rounded-t-2xl bg-white shadow-soft sm:inset-y-0 sm:left-auto sm:right-0 sm:h-full sm:max-h-none sm:w-[420px] sm:rounded-l-2xl sm:rounded-tr-none"
             role="dialog"
@@ -46,10 +46,10 @@ export function FloatingCartBar({ hidden = false }: { hidden?: boolean }) {
           >
             <div className="flex items-center justify-between border-b border-slate-100 p-4">
               <div>
-                <p className="text-xs font-black uppercase text-leaf-700">Your basket</p>
-                <h2 className="text-xl font-black text-ink">{itemCount} items ready</h2>
+                <p className="text-xs font-black uppercase text-primary-accent">Your basket</p>
+                <h2 className="text-xl font-black text-[#111827]">{itemCount} items ready</h2>
               </div>
-              <button type="button" onClick={() => setIsOpen(false)} className="rounded-md border border-slate-100 p-2 hover:bg-leaf-50" aria-label="Close cart drawer">
+              <button type="button" onClick={() => setIsOpen(false)} className="rounded-md border border-slate-100 p-2 hover:bg-emerald-50/50" aria-label="Close cart drawer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -65,8 +65,8 @@ export function FloatingCartBar({ hidden = false }: { hidden?: boolean }) {
                       <div className="min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="truncate font-black text-ink">{formatCartItemName(name, item.selectedUnit)}</p>
-                            <p className="text-sm font-semibold text-ink/60">{formatCurrency(unitPrice)} each</p>
+                            <p className="truncate font-black text-[#111827]">{formatCartItemName(name, item.selectedUnit)}</p>
+                            <p className="text-sm font-semibold text-slate-500">{formatCurrency(unitPrice)} each</p>
                           </div>
                           <button type="button" onClick={() => removeFromCart(item.product.id, item.selectedUnit)} className="rounded-md p-1.5 text-red-700 hover:bg-red-50" aria-label="Remove item">
                             <Trash2 className="h-4 w-4" />
@@ -74,15 +74,15 @@ export function FloatingCartBar({ hidden = false }: { hidden?: boolean }) {
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => updateQuantity(item.product.id, item.selectedUnit, item.quantity - 1)} className="rounded-md border border-slate-200 bg-white p-2 hover:bg-leaf-50" aria-label="Decrease quantity">
+                            <button type="button" onClick={() => updateQuantity(item.product.id, item.selectedUnit, item.quantity - 1)} className="rounded-md border border-slate-200 bg-white p-2 hover:bg-emerald-50/50" aria-label="Decrease quantity">
                               <Minus className="h-4 w-4" />
                             </button>
-                            <span className="grid h-9 min-w-10 place-items-center rounded-md bg-white px-3 text-sm font-black">{item.quantity}</span>
-                            <button type="button" onClick={() => updateQuantity(item.product.id, item.selectedUnit, item.quantity + 1)} className="rounded-md border border-slate-200 bg-white p-2 hover:bg-leaf-50" aria-label="Increase quantity">
+                            <span className="grid h-9 min-w-10 place-items-center rounded-md bg-white px-3 text-sm font-black text-[#111827]">{item.quantity}</span>
+                            <button type="button" onClick={() => updateQuantity(item.product.id, item.selectedUnit, item.quantity + 1)} className="rounded-md border border-slate-200 bg-white p-2 hover:bg-emerald-50/50" aria-label="Increase quantity">
                               <Plus className="h-4 w-4" />
                             </button>
                           </div>
-                          <p className="font-black text-leaf-700">{formatCurrency(unitPrice * item.quantity)}</p>
+                          <p className="font-black text-[#15803d]">{formatCurrency(unitPrice * item.quantity)}</p>
                         </div>
                       </div>
                     </div>
@@ -92,11 +92,11 @@ export function FloatingCartBar({ hidden = false }: { hidden?: boolean }) {
             </div>
 
             <div className="border-t border-slate-100 bg-white p-4">
-              <div className="mb-3 flex items-center justify-between text-lg font-black text-ink">
+              <div className="mb-3 flex items-center justify-between text-lg font-black text-[#111827]">
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
-              <Link href="/checkout" onClick={() => setIsOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 font-black text-white hover:bg-leaf-700">
+              <Link href="/checkout" onClick={() => setIsOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-accent px-4 py-3 font-black text-white hover:bg-emerald-800 transition active:scale-[0.98]">
                 Checkout now
               </Link>
             </div>

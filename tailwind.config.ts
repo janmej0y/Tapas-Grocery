@@ -9,13 +9,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        leaf: {
-          50: "#ecfdf5",
-          100: "#d1fae5",
-          500: "#059669",
-          600: "#047857",
-          700: "#065f46"
-        },
+
+        "primary-accent": "#15803d",
+        "secondary-accent": "#f59e0b",
+        "heading": "#111827",
+        "badge-success": "#15803d",
+        "badge-deal": "#f59e0b",
+        "badge-warning": "#dc2626",
+        "badge-saved": "#06b6d4",
         marigold: "#b45309",
         ink: "#0f172a"
       },

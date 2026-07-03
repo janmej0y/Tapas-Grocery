@@ -351,7 +351,7 @@ export default function AdminPage() {
             <button
               type="button"
               onClick={() => signIn("google", { callbackUrl: "/admin" })}
-              className="w-full rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700"
+              className="w-full rounded-md bg-primary-accent px-4 py-3 font-bold text-white hover:bg-primary-accent/90"
             >
               Continue with Google
             </button>
@@ -399,7 +399,7 @@ export default function AdminPage() {
     <main className="bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 rounded-lg border border-emerald-100 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
         <div>
-          <p className="text-sm font-black uppercase text-leaf-700">Owner operations</p>
+          <p className="text-sm font-black uppercase text-primary-accent">Owner operations</p>
           <h1 className="text-4xl font-black text-ink">{t("dashboard")}</h1>
           <p className="mt-2 text-ink/65">Secure owner controls for products, inventory, analytics, and incoming orders.</p>
         </div>
@@ -408,7 +408,7 @@ export default function AdminPage() {
           onClick={() => {
             signOut({ callbackUrl: "/" });
           }}
-          className="rounded-md border border-black/10 bg-white px-4 py-2 font-bold hover:bg-leaf-50"
+          className="rounded-md border border-black/10 bg-white px-4 py-2 font-bold hover:bg-primary-accent/10"
         >
           {t("logout")}
         </button>
@@ -421,7 +421,7 @@ export default function AdminPage() {
             type="button"
             onClick={() => setActiveAdminSection(section.id)}
             className={`min-h-11 shrink-0 rounded-md px-4 text-sm font-black transition ${
-              activeAdminSection === section.id ? "bg-leaf-600 text-white" : "bg-slate-50 text-ink hover:bg-leaf-50"
+              activeAdminSection === section.id ? "bg-primary-accent/90 text-white" : "bg-slate-50 text-ink hover:bg-leaf-50"
             }`}
           >
             {section.label}
@@ -483,7 +483,7 @@ export default function AdminPage() {
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           {lowStockProducts.length === 0 ? (
-            <span className="rounded-full bg-leaf-50 px-3 py-2 text-sm font-bold text-leaf-700">All inventory looks healthy</span>
+            <span className="rounded-full bg-leaf-50 px-3 py-2 text-sm font-bold text-primary-accent">All inventory looks healthy</span>
           ) : (
             lowStockProducts.map((product) => (
               <span key={product.id} className="rounded-full bg-red-100 px-3 py-2 text-sm font-bold text-red-800">
@@ -497,7 +497,7 @@ export default function AdminPage() {
       <section className={`mx-auto mt-8 max-w-7xl gap-4 lg:grid-cols-[0.75fr_1.25fr] ${activeAdminSection === "products" ? "grid" : "hidden"}`}>
         <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">
+            <span className="rounded-md bg-leaf-50 p-2 text-primary-accent">
               <Upload className="h-5 w-5" />
             </span>
             <div>
@@ -521,7 +521,7 @@ export default function AdminPage() {
 
         <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">
+            <span className="rounded-md bg-leaf-50 p-2 text-primary-accent">
               <History className="h-5 w-5" />
             </span>
             <div>
@@ -565,11 +565,11 @@ export default function AdminPage() {
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           {blockedPhones.length === 0 ? (
-            <span className="rounded-full bg-leaf-50 px-3 py-2 text-sm font-bold text-leaf-700">No blocked users</span>
+            <span className="rounded-full bg-leaf-50 px-3 py-2 text-sm font-bold text-primary-accent">No blocked users</span>
           ) : blockedPhones.map((phone) => {
             const isBlocked = blockedPhones.includes(phone);
             return (
-              <span key={phone} className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-bold ${isBlocked ? "bg-red-100 text-red-800" : "bg-leaf-50 text-leaf-700"}`}>
+              <span key={phone} className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-bold ${isBlocked ? "bg-red-100 text-red-800" : "bg-leaf-50 text-primary-accent"}`}>
                 {phone} {isBlocked ? "Blocked" : "Active"}
                 {isBlocked ? (
                   <button type="button" onClick={() => unblockPhone(phone)} className="rounded-full bg-white p-1" aria-label="Unblock phone">
@@ -759,7 +759,7 @@ export default function AdminPage() {
                   <td className="px-4 py-3">{formatCurrency(order.discount_amount)}</td>
                   <td className="px-4 py-3">{formatCurrency(order.total_amount)}</td>
                   <td className="px-4 py-3">{order.payment_method} · {order.payment_status}</td>
-                  <td className="px-4 py-3 font-semibold text-leaf-700">{order.delivery_eta}</td>
+                  <td className="px-4 py-3 font-semibold text-primary-accent">{order.delivery_eta}</td>
                   <td className="px-4 py-3">{order.delivery_distance} km</td>
                   <td className="px-4 py-3">
                     <select
@@ -859,7 +859,7 @@ export default function AdminPage() {
                   href={orderMapUrl(selectedOrder)}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-2 inline-flex font-bold text-leaf-700 hover:underline"
+                  className="mt-2 inline-flex font-bold text-primary-accent hover:underline"
                 >
                   Open delivery location
                 </a>
@@ -910,7 +910,7 @@ export default function AdminPage() {
                   <p className="mt-1 font-black text-ink">{formatCurrency(selectedOrder.discount_amount)}</p>
                 </div>
                 <div className="rounded-lg bg-leaf-50 p-3">
-                  <p className="text-xs font-black uppercase text-leaf-700">Delivery</p>
+                  <p className="text-xs font-black uppercase text-primary-accent">Delivery</p>
                   <p className="mt-1 font-black text-ink">{formatCurrency(selectedOrder.delivery_fee)}</p>
                 </div>
               </div>
@@ -951,7 +951,7 @@ export default function AdminPage() {
                       setSelectedOrder(nextOrder);
                       notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Approved", reason: cancelReason });
                     }}
-                    className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-leaf-100"
+                    className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-primary-accent/10"
                   >
                     Approve refund
                   </button>
@@ -982,7 +982,7 @@ function Metric({ icon, title, value }: { icon: ReactNode; title: string; value:
     <div className="rounded-lg border border-emerald-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-bold text-ink/65">{title}</p>
-        <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">{icon}</span>
+        <span className="rounded-md bg-leaf-50 p-2 text-primary-accent">{icon}</span>
       </div>
       <p className="mt-4 text-3xl font-black text-ink">{value}</p>
       <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -997,7 +997,7 @@ function ChartPanel({ children, title }: { children: ReactNode; title: string })
     <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-black text-ink">{title}</h2>
-        <span className="rounded-full bg-leaf-50 px-2 py-1 text-xs font-black text-leaf-700">Live</span>
+        <span className="rounded-full bg-leaf-50 px-2 py-1 text-xs font-black text-primary-accent">Live</span>
       </div>
       <div className="mt-4">{children}</div>
     </div>

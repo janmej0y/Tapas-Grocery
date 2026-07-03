@@ -19,16 +19,18 @@ const policies = [
 
 export default function PoliciesPage() {
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-      <p className="text-sm font-black uppercase tracking-[0.16em] text-leaf-700">Tapas Grocery Store</p>
-      <h1 className="mt-2 text-4xl font-black text-ink">Policies</h1>
+    <main className="app-bg min-h-screen px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl">
+        <p className="text-sm font-black uppercase tracking-[0.16em] text-primary-accent">Tapas Grocery Store</p>
+        <h1 className="mt-2 text-4xl font-black text-heading">Policies</h1>
       <div className="mt-8 space-y-4">
         {policies.map((policy) => (
-          <section key={policy.title} className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-black text-ink">{policy.title}</h2>
-            <p className="mt-2 leading-7 text-ink/70">{policy.body}</p>
+          <section key={policy.title} className="premium-card rounded-2xl p-5 hover:shadow-soft transition">
+            <h2 className="text-xl font-black text-heading">{policy.title}</h2>
+            <p className="mt-2 leading-7 text-slate-500">{policy.body}</p>
           </section>
         ))}
+      </div>
       </div>
     </main>
   );

@@ -9,6 +9,7 @@ import { SearchBar } from "@/components/storefront/search-bar";
 import { Select } from "@/components/ui/input";
 import { useStore } from "@/components/store-provider";
 import { filterProductsByStoreCategory, getCategoryLabel, PRODUCTS_PER_PAGE, storeCategories } from "@/lib/catalog";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -47,75 +48,149 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   }, [query, sortBy, slug]);
 
   return (
-    <main className="bg-slate-50 pb-24">
-      <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <Link href="/#categories" className="inline-flex items-center gap-2 text-sm font-black text-leaf-700 hover:underline">
-            <ArrowLeft className="h-4 w-4" />
-            Back to all products
-          </Link>
-          <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-            <div>
-              <p className="text-sm font-black uppercase text-leaf-700">Category</p>
-              <h1 className="text-3xl font-black text-ink sm:text-4xl">{categoryLabel}</h1>
-              <p className="mt-1 text-sm font-semibold text-ink/60">{filteredProducts.length} products available</p>
-            </div>
-            <Select aria-label="Sort products" value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="sm:max-w-56">
-              <option value="popular">Popular first</option>
-              <option value="price-low">Price: low to high</option>
-              <option value="price-high">Price: high to low</option>
-            </Select>
+    <main className="app-bg pb-24 min-h-screen">
+      <section className="relative overflow-hidden border-b border-slate-200/80 bg-white/70 backdrop-blur-md">
+        {/* Subtle decorative blob */}
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-500/5 blur-2xl pointer-events-none" />
+        <div className="absolute left-1/3 bottom-0 h-32 w-32 rounded-full bg-amber-500/5 blur-2xl pointer-events-none" />
+        <div className="absolute inset-0 soft-grid-bg opacity-[0.25] pointer-events-none" />
+
+        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Link href="/#categories" className="inline-flex items-center gap-2 text-sm font-black text-[#15803d] hover:text-emerald-800 transition-colors group">
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+              Back to all products
+            </Link>
+          </motion.div>
+
+          <div className="mt-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.05 }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-2 w-2 rounded-full bg-[#15803d]" />
+                <p className="text-xs font-black uppercase tracking-wider text-[#15803d]">Category</p>
+              </div>
+              <h1 className="mt-1 text-3xl font-black tracking-tight text-[#111827] sm:text-4xl">{categoryLabel}</h1>
+              <p className="mt-1.5 text-sm font-semibold text-slate-500">
+                <span className="font-extrabold text-[#15803d]">{filteredProducts.length}</span> products available
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="w-full sm:max-w-56"
+            >
+              <Select aria-label="Sort products" value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-full shadow-sm bg-white border-slate-200/80 text-sm font-black focus:border-[#15803d] focus:ring-emerald-100">
+                <option value="popular">Popular first</option>
+                <option value="price-low">Price: low to high</option>
+                <option value="price-high">Price: high to low</option>
+              </Select>
+            </motion.div>
           </div>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-            {storeCategories.map((category) => (
-              <Link
-                key={category.slug}
-                href={category.slug === "all" ? "/" : `/category/${category.slug}`}
-                className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-black transition ${
-                  category.slug === slug ? "border-leaf-600 bg-leaf-600 text-white" : "border-slate-200 bg-white text-ink hover:bg-leaf-50"
-                }`}
-              >
-                <Tags className="h-4 w-4" />
-                {category.label}
-              </Link>
-            ))}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="mt-6 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] -mx-4 px-4 sm:mx-0 sm:px-0"
+          >
+            {storeCategories.map((category) => {
+              const isActive = category.slug === slug;
+              return (
+                <Link
+                  key={category.slug}
+                  href={category.slug === "all" ? "/" : `/category/${category.slug}`}
+                  className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-black shadow-sm transition-all duration-200 active:scale-95 ${
+                    isActive 
+                      ? "border-[#15803d] bg-[#15803d] text-white shadow-md shadow-emerald-700/10" 
+                      : "border-slate-200 bg-white text-slate-700 hover:text-[#15803d] hover:border-emerald-200 hover:bg-emerald-50/30"
+                  }`}
+                >
+                  <Tags className={`h-4 w-4 ${isActive ? "text-white" : "text-slate-400"}`} />
+                  {category.label}
+                </Link>
+              );
+            })}
+          </motion.div>
 
-          <div className="mt-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="mt-5"
+          >
             <SearchBar products={categoryProducts} query={query} onQueryChange={setQuery} />
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between gap-3">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
+          className="flex items-end justify-between gap-3 border-b border-slate-100 pb-4"
+        >
           <div>
-            <p className="text-sm font-black uppercase text-leaf-700">Showing now</p>
-            <h2 className="text-2xl font-black text-ink">{categoryLabel}</h2>
+            <p className="text-xs font-black uppercase tracking-wider text-slate-400">Showing now</p>
+            <h2 className="text-xl font-black text-[#111827] mt-0.5">{categoryLabel} Selection</h2>
           </div>
-          <p className="text-right text-sm font-bold text-ink/55">
-            Page {currentPage} of {totalPages}
-            <span className="block text-xs">{filteredProducts.length} products</span>
+          <p className="text-right text-xs font-bold text-slate-400">
+            Page <span className="font-extrabold text-slate-600">{currentPage}</span> of <span className="font-extrabold text-slate-600">{totalPages}</span>
+            <span className="block text-[10px] uppercase font-black tracking-wider text-slate-400/80 mt-0.5">{filteredProducts.length} items total</span>
           </p>
-        </div>
+        </motion.div>
 
-        <div id="category-results" className="mt-4 grid scroll-mt-24 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {pageProducts.length ? pageProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          )) : (
-            <div className="col-span-full rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-leaf-50 text-leaf-700">
-                <Search className="h-5 w-5" />
-              </div>
-              <h3 className="mt-3 text-xl font-black text-ink">No products found</h3>
-              <p className="mt-1 text-sm font-semibold text-ink/60">Try another search term in this category.</p>
-            </div>
-          )}
-        </div>
+        <motion.div 
+          layout
+          id="category-results" 
+          className="mt-6 grid scroll-mt-24 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        >
+          <AnimatePresence mode="popLayout">
+            {pageProducts.length ? pageProducts.map((product) => (
+              <motion.div
+                layout
+                key={product.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ProductCard product={product} />
+              </motion.div>
+            )) : (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-panel col-span-full rounded-2xl p-12 text-center"
+              >
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-[#15803d]">
+                  <Search className="h-6 w-6" />
+                </div>
+                <h3 className="mt-4 text-xl font-black text-[#111827]">No products found</h3>
+                <p className="mt-2 text-sm font-semibold text-slate-500 max-w-sm mx-auto">We couldn't find any products in "{categoryLabel}" matching your search. Try another search term!</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
         {filteredProducts.length > PRODUCTS_PER_PAGE ? (
-          <CategoryPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+          >
+            <CategoryPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          </motion.div>
         ) : null}
       </section>
     </main>
@@ -131,20 +206,39 @@ function CategoryPagination({ currentPage, onPageChange, totalPages }: { current
   }
 
   return (
-    <nav className="mt-6 flex flex-wrap items-center justify-center gap-2" aria-label="Category pagination">
-      <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="h-11 rounded-md border border-slate-200 bg-white px-4 text-sm font-black text-ink disabled:opacity-40">
+    <nav className="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="Category pagination">
+      <button 
+        type="button" 
+        onClick={() => goToPage(currentPage - 1)} 
+        disabled={currentPage === 1} 
+        className="h-11 rounded-full border border-slate-200 bg-white px-5 text-sm font-black text-[#111827] shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+      >
         Previous
       </button>
       {Array.from({ length: totalPages }).slice(0, 7).map((_, index) => {
         const page = index + 1;
         return (
-          <button key={page} type="button" onClick={() => goToPage(page)} className={`h-11 min-w-11 rounded-md border px-3 text-sm font-black ${page === currentPage ? "border-leaf-600 bg-leaf-600 text-white" : "border-slate-200 bg-white text-ink"}`}>
+          <button 
+            key={page} 
+            type="button" 
+            onClick={() => goToPage(page)} 
+            className={`h-11 min-w-11 rounded-full border px-4 text-sm font-black transition-all duration-150 active:scale-95 ${
+              page === currentPage 
+                ? "border-[#15803d] bg-[#15803d] text-white shadow-sm shadow-emerald-700/10" 
+                : "border-slate-200 bg-white text-[#111827] hover:bg-slate-50"
+            }`}
+          >
             {page}
           </button>
         );
       })}
-      {totalPages > 7 ? <span className="px-2 text-sm font-black text-ink/45">...</span> : null}
-      <button type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="h-11 rounded-md border border-slate-200 bg-white px-4 text-sm font-black text-ink disabled:opacity-40">
+      {totalPages > 7 ? <span className="px-2 text-sm font-black text-slate-400">...</span> : null}
+      <button 
+        type="button" 
+        onClick={() => goToPage(currentPage + 1)} 
+        disabled={currentPage === totalPages} 
+        className="h-11 rounded-full border border-slate-200 bg-white px-5 text-sm font-black text-[#111827] shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+      >
         Next
       </button>
     </nav>

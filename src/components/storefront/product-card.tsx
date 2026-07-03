@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import type { Product } from "@/lib/types";
 import { getUnitPrice } from "@/lib/units";
+import { Badge } from "@/components/ui/badge";
 
 export function ProductCard({ product }: { product: Product }) {
   const { productName, t } = useLanguage();
@@ -53,8 +54,8 @@ export function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <article className="group flex h-full min-h-[336px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-[border-color,box-shadow,transform] duration-150 active:scale-[0.995] sm:hover:-translate-y-0.5 sm:hover:border-emerald-200 sm:hover:shadow-soft">
-      <div className="relative aspect-[5/4] overflow-hidden bg-slate-50">
+    <article className="premium-card group flex h-full min-h-[348px] flex-col overflow-hidden rounded-2xl transition-[border-color,box-shadow,transform] duration-150 active:scale-[0.995] sm:hover:-translate-y-1 sm:hover:border-emerald-200 sm:hover:shadow-soft">
+      <div className="relative aspect-[5/4] overflow-hidden bg-gradient-to-br from-slate-50 via-white to-emerald-50/60">
         {!imageReady ? (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-white to-emerald-50" />
         ) : null}
@@ -75,22 +76,15 @@ export function ProductCard({ product }: { product: Product }) {
 
         <div className="absolute left-2 top-2 flex max-w-[calc(100%-3.5rem)] flex-wrap gap-1">
           {hasOffer ? (
-            <span className="rounded bg-amber-500 px-1.5 py-1 text-[10px] font-black uppercase leading-none text-white">
-              Deal
-            </span>
+            <Badge variant="deal">Deal</Badge>
           ) : null}
-          <span
-            className={cn(
-              "rounded px-1.5 py-1 text-[10px] font-black uppercase leading-none",
-              isOutOfStock
-                ? "bg-red-50 text-red-700"
-                : isLowStock
-                  ? "bg-amber-50 text-amber-800"
-                  : "bg-emerald-50 text-emerald-800"
-            )}
-          >
-            {isOutOfStock ? "Sold out" : isLowStock ? "Low stock" : "Fresh"}
-          </span>
+          {isOutOfStock ? (
+            <Badge variant="warning">Sold out</Badge>
+          ) : isLowStock ? (
+            <Badge variant="deal">Low stock</Badge>
+          ) : (
+            <Badge variant="fresh">Fresh</Badge>
+          )}
         </div>
 
         <button
@@ -140,7 +134,7 @@ export function ProductCard({ product }: { product: Product }) {
             id={`unit-${product.id}`}
             value={selectedUnit}
             onChange={(event) => setSelectedUnit(event.target.value)}
-            className="h-10 min-w-0 rounded-md border border-slate-200 bg-slate-50 px-2 text-sm font-black text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+          className="h-10 min-w-0 rounded-full border border-slate-200 bg-slate-50 px-3 text-sm font-black text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100"
           >
             {product.unitOptions.map((unit) => (
               <option key={unit} value={unit}>
@@ -162,7 +156,7 @@ export function ProductCard({ product }: { product: Product }) {
           {cartQuantity > 0 ? (
             <div
               className={cn(
-                "grid h-11 w-[116px] grid-cols-3 overflow-hidden rounded-md border border-emerald-700 bg-emerald-700 text-white shadow-sm transition-transform duration-150",
+                "grid h-11 w-[116px] grid-cols-3 overflow-hidden rounded-full border border-emerald-700 bg-emerald-700 text-white shadow-sm transition-transform duration-150",
                 justAdded && "scale-[1.04]"
               )}
               aria-label={`${displayName} quantity in cart`}
@@ -180,7 +174,7 @@ export function ProductCard({ product }: { product: Product }) {
               type="button"
               onClick={addOne}
               disabled={isOutOfStock}
-              className="inline-grid h-11 min-w-[96px] grid-flow-col place-items-center gap-1.5 rounded-md bg-emerald-700 px-3 text-sm font-black uppercase text-white shadow-sm transition active:scale-95 disabled:bg-slate-200 disabled:text-slate-500"
+              className="inline-grid h-11 min-w-[96px] grid-flow-col place-items-center gap-1.5 rounded-full bg-[#15803d] px-3 text-sm font-black uppercase text-white shadow-sm transition hover:bg-emerald-800 active:scale-95 disabled:bg-slate-200 disabled:text-slate-500"
             >
               <ShoppingBasket className="h-4 w-4" aria-hidden="true" />
               ADD

@@ -52,14 +52,15 @@ export function AiAssistant() {
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">
-            <Bot className="h-5 w-5" />
+          <span className="rounded-md bg-emerald-50 p-2 text-primary-accent">
+            <Sparkles className="h-5 w-5" />
           </span>
-          <h2 className="text-2xl font-black text-ink">{t("assistant")}</h2>
+          <h2 className="text-2xl font-black text-heading">{t("assistant")}</h2>
         </div>
         <div className="mt-5 grid gap-3">
-          {messages.slice(-4).map((message, index) => (
-            <div key={`${message.role}-${index}`} className={`rounded-lg px-4 py-3 text-sm ${message.role === "assistant" ? "bg-leaf-50 text-ink" : "bg-ink text-white"}`}>
+          {messages.length === 0 ? <p className="text-sm text-slate-500">Ask Tapas Assistant anything about groceries, orders, or policies...</p> : null}
+          {messages.map((message, index) => (
+            <div key={`${message.role}-${index}`} className={`rounded-lg px-4 py-3 text-sm ${message.role === "assistant" ? "bg-emerald-50 text-heading" : "bg-heading text-white"}`}>
               {message.content}
             </div>
           ))}
@@ -76,8 +77,8 @@ export function AiAssistant() {
             className="min-w-0 flex-1 rounded-md border border-black/10 px-3 py-2"
             placeholder={t("askAssistant")}
           />
-          <button type="button" onClick={sendMessage} disabled={isLoading} className="rounded-md bg-leaf-600 px-4 py-2 text-white hover:bg-leaf-700 disabled:bg-gray-300" aria-label="Send message">
-            <Send className="h-4 w-4" />
+          <button type="button" onClick={sendMessage} disabled={isLoading} className="rounded-md bg-primary-accent px-4 py-2 text-white hover:bg-emerald-800 disabled:bg-gray-300" aria-label="Send message">
+            <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>

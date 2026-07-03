@@ -4,11 +4,11 @@ import { cn } from "@/lib/cn";
 type ButtonVariant = "primary" | "secondary" | "dark" | "danger" | "ghost";
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-leaf-600 text-white hover:bg-leaf-700 disabled:bg-zinc-300 disabled:text-zinc-600",
-  secondary: "border border-zinc-100 bg-white text-ink hover:bg-leaf-50",
-  dark: "bg-ink text-white hover:bg-leaf-700 disabled:bg-zinc-300 disabled:text-zinc-600",
+  primary: "bg-primary-accent text-white hover:bg-primary-accent/90 disabled:bg-zinc-300 disabled:text-zinc-600",
+  secondary: "bg-secondary-accent text-white hover:bg-secondary-accent/90",
+  dark: "bg-ink text-white hover:bg-primary-accent disabled:bg-zinc-300 disabled:text-zinc-600",
   danger: "bg-red-700 text-white hover:bg-red-800 disabled:bg-zinc-300 disabled:text-zinc-600",
-  ghost: "text-ink hover:bg-leaf-50"
+  ghost: "text-ink hover:bg-primary-accent/10"
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

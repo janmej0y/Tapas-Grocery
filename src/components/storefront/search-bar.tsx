@@ -62,7 +62,7 @@ export function SearchBar({ onQueryChange, products, query }: SearchBarProps) {
 
   return (
     <div className="relative">
-      <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-leaf-700" />
+      <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-primary-accent" />
       <Input
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
@@ -74,7 +74,7 @@ export function SearchBar({ onQueryChange, products, query }: SearchBarProps) {
       <button
         type="button"
         onClick={startVoiceSearch}
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-ink/55 hover:bg-leaf-50"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 hover:bg-emerald-50/50 transition"
         aria-label="Voice search"
       >
         <Mic className="h-4 w-4" />
@@ -84,7 +84,7 @@ export function SearchBar({ onQueryChange, products, query }: SearchBarProps) {
         <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-40 overflow-hidden rounded-xl border border-slate-200 bg-white opacity-100 shadow-soft transition-opacity duration-100">
           {!query.trim() ? (
             <div className="p-4">
-              <p className="inline-flex items-center gap-2 text-xs font-black uppercase text-leaf-700">
+              <p className="inline-flex items-center gap-2 text-xs font-black uppercase text-primary-accent">
                 <Sparkles className="h-4 w-4" />
                 Popular searches
               </p>
@@ -94,7 +94,7 @@ export function SearchBar({ onQueryChange, products, query }: SearchBarProps) {
                     key={term}
                     type="button"
                     onClick={() => onQueryChange(term)}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-ink hover:bg-leaf-50"
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-heading hover:bg-emerald-50/50 transition"
                   >
                     <Clock3 className="h-3.5 w-3.5 text-ink/45" />
                     {term}

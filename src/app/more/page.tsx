@@ -56,12 +56,12 @@ export default function MorePage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-73px)] bg-leaf-50">
+    <main className="app-bg min-h-[calc(100vh-73px)]">
       <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
-          <p className="text-sm font-black uppercase tracking-[0.16em] text-leaf-700">More</p>
-          <h1 className="mt-2 text-4xl font-black text-ink">App, browser, and APK</h1>
-          <p className="mt-4 text-lg leading-8 text-ink/70">
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-primary-accent">More</p>
+          <h1 className="mt-2 text-4xl font-black text-heading">App, browser, and APK</h1>
+          <p className="mt-4 text-lg leading-8 text-slate-500">
             Install Tapas Grocery Store as a PWA, check for app updates, continue in the browser, or download the Android APK when it is published.
           </p>
         </div>
@@ -75,7 +75,7 @@ export default function MorePage() {
             <button
               type="button"
               onClick={() => toast.success("Open your browser menu and choose Install app or Add to Home screen.")}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 font-bold text-white hover:bg-emerald-800 transition active:scale-[0.98]"
             >
               Install guide
               <ArrowRight className="h-4 w-4" />
@@ -91,7 +91,7 @@ export default function MorePage() {
               type="button"
               onClick={checkForUpdate}
               disabled={isUpdating}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:bg-gray-300"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 font-bold text-white hover:bg-emerald-800 transition active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400"
             >
               <RefreshCw className="h-4 w-4" />
               {isUpdating ? "Checking..." : "Check update"}
@@ -104,12 +104,12 @@ export default function MorePage() {
             text={apkAvailable ? "Download the Android APK package directly." : "APK file is not uploaded yet. Add it to public/downloads/tapas-grocery.apk when ready."}
           >
             {apkAvailable ? (
-              <a href={APK_PATH} download className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
+              <a href={APK_PATH} download className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 font-bold text-white hover:bg-emerald-800 transition active:scale-[0.98]">
                 <Download className="h-4 w-4" />
                 Download APK
               </a>
             ) : (
-              <button type="button" disabled className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gray-300 px-4 py-3 font-bold text-gray-700">
+              <button type="button" disabled className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-200 px-4 py-3 font-bold text-slate-500">
                 <PackageCheck className="h-4 w-4" />
                 {isCheckingApk ? "Checking APK..." : "APK coming soon"}
               </button>
@@ -117,25 +117,25 @@ export default function MorePage() {
           </ActionCard>
         </div>
 
-        <section className="mt-6 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+        <section className="premium-card mt-6 rounded-2xl p-5">
           <div className="flex items-start gap-3">
-            <span className="rounded-md bg-leaf-50 p-2 text-leaf-700">
+            <span className="rounded-full bg-emerald-50 p-2 text-primary-accent">
               <Globe2 className="h-5 w-5" />
             </span>
             <div>
-              <h2 className="text-xl font-black text-ink">Explore in browser</h2>
-              <p className="mt-1 text-sm leading-6 text-ink/65">
+              <h2 className="text-xl font-black text-heading">Explore in browser</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-500">
                 The website always works in normal browser mode too. Customers can shop, login, checkout, track orders, and use the account page without installing anything.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Link href="/" className="inline-flex items-center gap-2 rounded-md bg-ink px-4 py-2 font-bold text-white hover:bg-leaf-700">
+                <Link href="/" className="inline-flex items-center gap-2 rounded-full bg-primary-accent px-4 py-2 font-bold text-white hover:bg-emerald-800 transition active:scale-[0.98]">
                   Open store
                   <ExternalLink className="h-4 w-4" />
                 </Link>
-                <Link href="/login" className="rounded-md border border-black/10 px-4 py-2 font-bold hover:bg-leaf-50">
+                <Link href="/login" className="rounded-full border border-slate-200 bg-white px-4 py-2 font-bold text-heading hover:bg-emerald-50/50 transition">
                   Login
                 </Link>
-                <Link href="/cart" className="rounded-md border border-black/10 px-4 py-2 font-bold hover:bg-leaf-50">
+                <Link href="/cart" className="rounded-full border border-slate-200 bg-white px-4 py-2 font-bold text-heading hover:bg-emerald-50/50 transition">
                   Cart
                 </Link>
               </div>
@@ -149,10 +149,10 @@ export default function MorePage() {
 
 function ActionCard({ children, icon, text, title }: { children: ReactNode; icon: ReactNode; text: string; title: string }) {
   return (
-    <section className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
-      <span className="grid h-12 w-12 place-items-center rounded-md bg-leaf-50 text-leaf-700">{icon}</span>
-      <h2 className="mt-4 text-xl font-black text-ink">{title}</h2>
-      <p className="mt-2 min-h-20 text-sm leading-6 text-ink/65">{text}</p>
+    <section className="premium-card rounded-2xl p-5 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-soft">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-primary-accent">{icon}</span>
+      <h2 className="mt-4 text-xl font-black text-heading">{title}</h2>
+      <p className="mt-2 min-h-20 text-sm leading-6 text-slate-500">{text}</p>
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -161,3 +161,4 @@ function ActionCard({ children, icon, text, title }: { children: ReactNode; icon
 function isStandaloneApp() {
   return window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
 }
+

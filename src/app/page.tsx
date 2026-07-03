@@ -12,6 +12,7 @@ import { SearchBar } from "@/components/storefront/search-bar";
 import { Select, Input } from "@/components/ui/input";
 import { useStore } from "@/components/store-provider";
 import { getCategoryCounts, PRODUCTS_PER_PAGE, storeCategories } from "@/lib/catalog";
+import { motion } from "framer-motion";
 
 export default function HomePage() {
   const { t } = useLanguage();
@@ -96,35 +97,70 @@ export default function HomePage() {
   }
 
   return (
-    <main className="bg-slate-50 pb-24">
-      <section className="relative overflow-hidden border-b border-emerald-900/10 bg-white">
-        <div className="absolute inset-0">
-          <Image src="/images/hatimuri-grocery-hero.png" alt="" fill priority sizes="100vw" className="object-cover object-center" />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/92 to-white/18" />
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-50 to-transparent" />
+    <main className="app-bg pb-24">
+      <section className="relative min-h-[620px] overflow-hidden border-b border-emerald-900/10 bg-white">
+        <div className="absolute inset-0 overflow-hidden">
+          <Image src="/images/hatimuri-grocery-hero.png" alt="" fill priority sizes="100vw" className="object-cover object-center brightness-[0.98]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-emerald-950/10" />
+          <div className="absolute inset-0 soft-grid-bg opacity-35" />
+
+          {/* Premium drift blobs */}
+          <motion.div
+            animate={{
+              x: [0, 20, -10, 0],
+              y: [0, -15, 20, 0],
+              scale: [1, 1.08, 0.92, 1],
+            }}
+            transition={{
+              duration: 14,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute left-1/3 top-10 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl"
+          />
+          <motion.div
+            animate={{
+              x: [0, -25, 15, 0],
+              y: [0, 20, -15, 0],
+              scale: [1, 0.93, 1.07, 1],
+            }}
+            transition={{
+              duration: 18,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute bottom-4 right-1/4 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl"
+          />
+
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#f7f8fa] to-transparent" />
         </div>
-        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/85 px-3 py-2 text-xs font-black uppercase text-leaf-700 shadow-sm backdrop-blur">
+        <div className="relative mx-auto flex min-h-[620px] max-w-7xl items-center px-4 py-10 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="max-w-2xl"
+          >
+            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/85 px-3 py-2 text-xs font-black uppercase text-primary-accent shadow-sm backdrop-blur">
               <MapPin className="h-4 w-4" />
               Hatimuri's Digital Grocery Store
             </p>
-            <h1 className="mt-4 text-4xl font-black leading-[1.02] text-ink sm:text-6xl">
+            <h1 className="mt-4 text-4xl font-black leading-[1.02] tracking-normal text-[#111827] sm:text-6xl">
               Fresh Groceries Delivered Across Hatimuri
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-ink/70 sm:text-lg">
               Order daily essentials from your trusted local store with fast delivery, transparent pricing, and cash on delivery.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <a href="#product-tools" className="inline-flex items-center justify-center gap-2 rounded-lg bg-leaf-600 px-5 py-3 text-sm font-black text-white shadow-soft transition hover:bg-leaf-700 active:scale-[0.98]">
+              <a href="#product-tools" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#15803d] px-5 py-3 text-sm font-black text-white shadow-soft transition hover:bg-emerald-800 active:scale-[0.98]">
                 <ShoppingBag className="h-4 w-4" />
                 Start shopping
               </a>
-              <Link href="/more" className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white/90 px-5 py-3 text-sm font-black text-ink shadow-sm backdrop-blur transition hover:bg-leaf-50 active:scale-[0.98]">
+              <Link href="/more" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-5 py-3 text-sm font-black text-ink shadow-sm backdrop-blur transition hover:bg-emerald-50 active:scale-[0.98]">
                 <Smartphone className="h-4 w-4" />
                 Install App
               </Link>
-              <a href="/downloads/tapas-grocery.apk" className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white/90 px-5 py-3 text-sm font-black text-ink shadow-sm backdrop-blur transition hover:bg-leaf-50 active:scale-[0.98]">
+              <a href="/downloads/tapas-grocery.apk" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-5 py-3 text-sm font-black text-ink shadow-sm backdrop-blur transition hover:bg-emerald-50 active:scale-[0.98]">
                 <Download className="h-4 w-4" />
                 Download APK
               </a>
@@ -139,26 +175,26 @@ export default function HomePage() {
               ].map((item) => {
                 const Icon = item.icon;
                 return (
-                  <span key={item.label} className="inline-flex items-center gap-2 rounded-lg border border-white/80 bg-white/80 px-3 py-2 text-xs font-black text-ink shadow-sm backdrop-blur">
-                    <Icon className="h-4 w-4 text-leaf-700" />
+                  <span key={item.label} className="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/82 px-3 py-2 text-xs font-black text-ink shadow-sm backdrop-blur">
+                    <Icon className="h-4 w-4 text-primary-accent" />
                     {item.label}
                   </span>
                 );
               })}
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      <section id="categories" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-4 sm:px-6 lg:px-8">
+      <section id="categories" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-6 sm:px-6 lg:px-8">
         <div
           id="product-tools"
-          className="relative z-10 -mx-4 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+          className="relative z-10 -mt-20 px-0 py-3"
         >
-          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="glass-panel rounded-2xl p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-black uppercase text-leaf-700">Tapas Grocery Store</p>
+                <p className="text-xs font-black uppercase text-primary-accent">Tapas Grocery Store</p>
                 <h2 className="truncate text-xl font-black text-ink">Search, filter, add</h2>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -166,13 +202,13 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-black text-ink hover:bg-leaf-50"
+                    className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-sm font-black text-ink hover:bg-emerald-50"
                   >
-                    <FilterX className="h-4 w-4 text-leaf-700" />
+                    <FilterX className="h-4 w-4 text-primary-accent" />
                     Clear
                   </button>
                 ) : null}
-                <span className="hidden rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-700 sm:inline-flex">
+                <span className="hidden rounded-full bg-emerald-50 px-3 py-2 text-sm font-black text-primary-accent sm:inline-flex">
                   {filteredProducts.length} items
                 </span>
               </div>
@@ -189,8 +225,8 @@ export default function HomePage() {
                   <Link
                     key={category.slug}
                     href={category.slug === "all" ? "/#product-tools" : `/category/${category.slug}`}
-                    className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-black transition active:scale-[0.98] ${
-                      category.slug === "all" ? "border-leaf-600 bg-leaf-600 text-white" : "border-slate-200 bg-white text-ink hover:bg-leaf-50"
+                    className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-black shadow-sm transition active:scale-[0.98] ${
+                      category.slug === "all" ? "border-primary-accent bg-primary-accent text-white" : "border-slate-200 bg-white text-ink hover:bg-emerald-50"
                     }`}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
@@ -200,9 +236,9 @@ export default function HomePage() {
               })}
             </div>
 
-            <details className="mt-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+            <details className="mt-3 rounded-2xl border border-slate-100 bg-white/70 px-3 py-2">
               <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-black text-ink">
-                <Search className="h-4 w-4 text-leaf-700" />
+                <Search className="h-4 w-4 text-primary-accent" />
                 More filters {activeFilterCount > 0 ? `(${activeFilterCount} active)` : ""}
               </summary>
               <div className="mt-3 grid gap-3 md:grid-cols-5">
@@ -224,7 +260,7 @@ export default function HomePage() {
         <div className="mt-5">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-sm font-black uppercase text-leaf-700">Shop by aisle</p>
+              <p className="text-sm font-black uppercase text-primary-accent">Shop by aisle</p>
               <h2 className="text-2xl font-black text-ink">Find daily essentials faster</h2>
             </div>
             <p className="hidden text-sm font-bold text-ink/55 sm:block">{products.length} total products</p>
@@ -234,7 +270,7 @@ export default function HomePage() {
               <Link
                 key={item.slug}
                 href={item.slug === "all" ? "/#product-tools" : `/category/${item.slug}`}
-                className="min-h-[72px] rounded-lg border border-slate-200 bg-white p-3 text-left text-ink transition hover:border-emerald-200 hover:bg-leaf-50 active:scale-[0.98]"
+                className="premium-card min-h-[88px] rounded-2xl p-4 text-left text-ink transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 active:scale-[0.98]"
               >
                 <span className="line-clamp-2 text-sm font-black leading-5">{item.label}</span>
                 <span className="mt-1 block text-xs font-bold text-ink/50">
@@ -247,20 +283,20 @@ export default function HomePage() {
 
         <div className="mt-4 flex items-end justify-between gap-3">
           <div>
-            <p className="text-sm font-black uppercase text-leaf-700">Available now</p>
+            <p className="text-sm font-black uppercase text-primary-accent">Available now</p>
             <h2 className="text-2xl font-black text-ink">{activeFilter === "all" ? "All groceries" : activeFilter}</h2>
           </div>
           <p className="text-right text-sm font-bold text-ink/55">
             {filteredProducts.length} products
             <span className="block text-xs text-ink/45">Page {currentPage} of {totalPages}</span>
-            {activeFilterCount > 0 ? <span className="block text-xs text-leaf-700">{activeFilterCount} filter{activeFilterCount === 1 ? "" : "s"} active</span> : null}
+            {activeFilterCount > 0 ? <span className="block text-xs text-primary-accent">{activeFilterCount} filter{activeFilterCount === 1 ? "" : "s"} active</span> : null}
           </p>
         </div>
 
         <div id="product-results" className="mt-4 grid scroll-mt-28 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.length === 0
             ? Array.from({ length: 8 }).map((_, index) => (
-                <div key={index} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <div key={index} className="premium-card rounded-2xl p-4">
                   <div className="skeleton aspect-[4/3] rounded-lg" />
                   <div className="skeleton mt-4 h-5 rounded-md" />
                   <div className="skeleton mt-2 h-4 w-2/3 rounded-md" />
@@ -270,8 +306,8 @@ export default function HomePage() {
             : filteredProducts.length > 0 ? pageProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               )) : (
-                <div className="col-span-full rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-leaf-50 text-leaf-700">
+                <div className="premium-card col-span-full rounded-2xl p-8 text-center">
+                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-primary-accent">
                     <Search className="h-5 w-5" />
                   </div>
                   <h3 className="mt-3 text-xl font-black text-ink">No matching products</h3>
@@ -281,7 +317,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="mt-4 inline-flex items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white hover:bg-leaf-700"
+                    className="mt-4 inline-flex items-center justify-center rounded-full bg-primary-accent px-4 py-3 text-sm font-black text-white hover:bg-emerald-800"
                   >
                     Show all products
                   </button>
@@ -326,7 +362,7 @@ function PaginationControls({ currentPage, onPageChange, totalPages }: { current
             type="button"
             onClick={() => goToPage(page)}
             className={`h-11 min-w-11 rounded-md border px-3 text-sm font-black ${
-              page === currentPage ? "border-leaf-600 bg-leaf-600 text-white" : "border-slate-200 bg-white text-ink"
+              page === currentPage ? "border-primary-accent bg-primary-accent text-white" : "border-slate-200 bg-white text-ink"
             }`}
           >
             {page}
