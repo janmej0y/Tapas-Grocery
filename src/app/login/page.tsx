@@ -21,7 +21,9 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    // Skip redirect if this is a recruiter demo session
+    const isRecruiter = typeof window !== "undefined" && sessionStorage.getItem("recruiter-demo") === "true";
+    if (user && !isRecruiter) {
       router.push("/");
     }
   }, [user, router]);
@@ -94,16 +96,15 @@ export default function LoginPage() {
     }
   }
 
-async function handleRecruiterDemoLogin() {
-  setIsSubmitting(true);
-  // Hardcoded demo user without DB verification
-  const demoUser = { id: "recruiter-demo", email: "recruiter@example.com", role: "recruiter-demo" } as any;
-  setUser(demoUser);
-  toast.success("Recruiter demo login successful!");
-  // Redirect recruiter demo to admin dashboard (view‑only)
-  router.push("/admin");
-  setIsSubmitting(false);
-}
+  async function handleRecruiterDemoLogin() {
+    setIsSubmitting(true);
+    toast.success("Recruiter demo login successful!");
+    // Store recruiter flag in sessionStorage — no DB or Supabase needed
+    sessionStorage.setItem("recruiter-demo", "true");
+    // Redirect directly to admin dashboard (view-only)
+    router.push("/admin");
+    setIsSubmitting(false);
+  }
 
   async function handleLogout() {
     if (!supabase) {

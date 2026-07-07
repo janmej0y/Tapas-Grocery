@@ -77,6 +77,16 @@ export default function AdminPage() {
   const [activeAdminSection, setActiveAdminSection] = useState<AdminSection>("orders");
 
   const isAdmin = session?.user?.role === "admin";
+  const [isRecruiterDemo, setIsRecruiterDemo] = useState(false);
+
+  // Detect recruiter demo session from sessionStorage (set by login page)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsRecruiterDemo(sessionStorage.getItem("recruiter-demo") === "true");
+    }
+  }, []);
+
+  const canView = isAdmin || isRecruiterDemo;
   const revenue = useMemo(() => orders.reduce((total, order) => total + order.total_amount, 0), [orders]);
   const dailyRevenue = useMemo(() => buildDailyRevenue(orders), [orders]);
   const topSelling = useMemo(() => buildTopSelling(orders), [orders]);
@@ -320,11 +330,11 @@ export default function AdminPage() {
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" && !isRecruiterDemo) {
     return <main className="mx-auto max-w-7xl px-4 py-10">Loading secure session...</main>;
   }
 
-  if (!isAdmin) {
+  if (!canView) {
     async function handleCredentialSignIn() {
       setIsSigningIn(true);
       const result = await signIn("credentials", {
@@ -397,6 +407,22 @@ export default function AdminPage() {
 
   return (
     <main className="bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
+      {isRecruiterDemo && (
+        <div className="mx-auto mb-4 max-w-7xl rounded-lg border border-amber-200 bg-amber-50 px-5 py-3 flex items-center gap-3">
+          <span className="text-lg">👁️</span>
+          <div>
+            <p className="font-black text-amber-800">Recruiter Demo — View Only</p>
+            <p className="text-sm text-amber-700">You can browse everything but cannot add, edit, or delete any data.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { sessionStorage.removeItem("recruiter-demo"); window.location.href = "/login"; }}
+            className="ml-auto rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-bold text-amber-800 hover:bg-amber-100"
+          >
+            Exit Demo
+          </button>
+        </div>
+      )}
       <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 rounded-lg border border-emerald-100 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
         <div>
           <p className="text-sm font-black uppercase text-primary-accent">Owner operations</p>
