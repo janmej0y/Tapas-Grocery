@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { ArrowRight, LogOut, Mail, ShieldCheck, Store, UserRoundCheck } from "lucide-react";
+import { Home, LogOut, Mail, ShieldCheck, Store, UserRoundCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import toast from "react-hot-toast";
@@ -101,8 +101,8 @@ export default function LoginPage() {
     toast.success("Recruiter demo login successful!");
     // Store recruiter flag in sessionStorage — no DB or Supabase needed
     sessionStorage.setItem("recruiter-demo", "true");
-    // Redirect directly to admin dashboard (view-only)
-    router.push("/admin");
+    // Redirect to storefront home page
+    router.push("/");
     setIsSubmitting(false);
   }
 
@@ -234,9 +234,9 @@ export default function LoginPage() {
               <UserRoundCheck className="h-4 w-4" />
               Account
             </Link>
-            <Link href="/cart" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 font-bold transition-all hover:bg-leaf-50 active:scale-[0.995]">
-              Checkout
-              <ArrowRight className="h-4 w-4" />
+            <Link href="/" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 font-bold transition-all hover:bg-leaf-50 active:scale-[0.995]">
+              <Home className="h-4 w-4" />
+              Home
             </Link>
             {user ? (
               <button type="button" onClick={handleLogout} className="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-4 py-3 font-bold text-red-700 transition-all hover:bg-red-50 active:scale-[0.995] sm:col-span-2">

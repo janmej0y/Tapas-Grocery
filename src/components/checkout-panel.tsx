@@ -91,8 +91,15 @@ export function CheckoutPanel() {
   } = useStore();
   const router = useRouter();
   const [showRecruiterModal, setShowRecruiterModal] = useState(false);
+  const [isRecruiterDemo, setIsRecruiterDemo] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState(customer.addresses[0]?.id ?? "manual");
   const [address, setAddress] = useState<UserAddress>(customer.addresses[0] ?? emptyAddress);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsRecruiterDemo(sessionStorage.getItem("recruiter-demo") === "true");
+    }
+  }, []);
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
@@ -146,7 +153,7 @@ export function CheckoutPanel() {
   }, [address]);
 
   async function placeOrder() {
-    if (user?.email === "recruiter@example.com") {
+    if (isRecruiterDemo || user?.email === "recruiter@example.com") {
       setShowRecruiterModal(true);
       return;
     }
@@ -926,6 +933,9 @@ export function CheckoutPanel() {
                     const supabase = createSupabaseBrowserClient();
                     await supabase?.auth.signOut();
                     logoutCustomer();
+                    if (typeof window !== "undefined") {
+                      sessionStorage.removeItem("recruiter-demo");
+                    }
                     setShowRecruiterModal(false);
                     router.push("/login");
                   }}

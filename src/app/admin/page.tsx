@@ -488,7 +488,7 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={seedSupabaseProducts}
-            disabled={isSeedingProducts}
+            disabled={isSeedingProducts || !isAdmin}
             className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             <Upload className="h-4 w-4" />
@@ -536,10 +536,10 @@ export default function AdminPage() {
               <Download className="h-4 w-4" />
               Export CSV
             </button>
-            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-black/10 bg-white px-4 py-3 font-bold hover:bg-leaf-50">
+            <label className={`inline-flex items-center justify-center gap-2 rounded-md border border-black/10 bg-white px-4 py-3 font-bold ${isAdmin ? "cursor-pointer hover:bg-leaf-50" : "cursor-not-allowed bg-gray-100 text-gray-400"}`}>
               <Upload className="h-4 w-4" />
               Import CSV
-              <input type="file" accept=".csv,text/csv" onChange={(event) => importProductsCsv(event.target.files?.[0])} className="sr-only" />
+              <input type="file" accept=".csv,text/csv" disabled={!isAdmin} onChange={(event) => importProductsCsv(event.target.files?.[0])} className="sr-only" />
             </label>
           </div>
           <p className="mt-3 text-xs text-ink/55">Image uploads should use Supabase Storage in production. CSV currently accepts image_url values for fast catalog entry.</p>
@@ -577,12 +577,13 @@ export default function AdminPage() {
             <input value={blockPhoneInput} onChange={(event) => setBlockPhoneInput(event.target.value)} className="min-w-0 rounded-md border border-black/10 px-3 py-2" placeholder="10 digit mobile" />
             <button
               type="button"
+              disabled={!isAdmin}
               onClick={() => {
                 blockPhone(blockPhoneInput);
                 toast.success("Phone blocked");
                 setBlockPhoneInput("");
               }}
-              className="inline-flex items-center gap-2 rounded-md bg-red-700 px-4 py-2 font-bold text-white hover:bg-red-800"
+              className="inline-flex items-center gap-2 rounded-md bg-red-700 px-4 py-2 font-bold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               <Ban className="h-4 w-4" />
               Block
@@ -598,7 +599,7 @@ export default function AdminPage() {
               <span key={phone} className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-bold ${isBlocked ? "bg-red-100 text-red-800" : "bg-leaf-50 text-primary-accent"}`}>
                 {phone} {isBlocked ? "Blocked" : "Active"}
                 {isBlocked ? (
-                  <button type="button" onClick={() => unblockPhone(phone)} className="rounded-full bg-white p-1" aria-label="Unblock phone">
+                  <button type="button" disabled={!isAdmin} onClick={() => unblockPhone(phone)} className="rounded-full bg-white p-1 disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Unblock phone">
                     <Undo2 className="h-3 w-3" />
                   </button>
                 ) : null}
@@ -690,7 +691,7 @@ export default function AdminPage() {
             <AdminInput label={t("imageUrl")} value={form.image_url} onChange={(value) => setForm((current) => ({ ...current, image_url: value }))} />
             <label className="block">
               <span className="text-sm font-bold">Upload product photo</span>
-              <input type="file" accept="image/*" onChange={(event) => uploadProductImage(event.target.files?.[0])} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2" />
+              <input type="file" accept="image/*" disabled={!isAdmin} onChange={(event) => uploadProductImage(event.target.files?.[0])} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" />
             </label>
             <AdminInput label={t("stock")} type="number" value={String(form.stock)} onChange={(value) => setForm((current) => ({ ...current, stock: Number(value) }))} />
             <AdminInput label="Low-stock threshold" type="number" value={String(form.minStock ?? 10)} onChange={(value) => setForm((current) => ({ ...current, minStock: Number(value) }))} />
@@ -706,7 +707,7 @@ export default function AdminPage() {
             )}
             <AdminInput label="Dietary tags" value={dietaryText} onChange={setDietaryText} />
           </div>
-          <button type="button" onClick={submitProduct} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700">
+          <button type="button" onClick={submitProduct} disabled={!isAdmin} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300">
             <Save className="h-4 w-4" />
             {editingProductId ? t("updateProduct") : t("addProduct")}
           </button>
@@ -790,12 +791,13 @@ export default function AdminPage() {
                   <td className="px-4 py-3">
                     <select
                       value={order.status}
+                      disabled={!isAdmin}
                       onChange={(event) => {
                         const statusValue = event.target.value as Order["status"];
                         updateOrderStatus(order.order_id, statusValue);
                         notifyCustomerOrderUpdate({ ...order, status: statusValue }, "status", { status: statusValue });
                       }}
-                      className="rounded-md border border-black/10 px-2 py-2 text-sm font-bold"
+                      className="rounded-md border border-black/10 px-2 py-2 text-sm font-bold disabled:bg-gray-100 disabled:cursor-not-allowed"
                     >
                       {["Pending", "Accepted", "Preparing", "Out for delivery", "Delivered", "Cancelled", "Refunded"].map((status) => (
                         <option key={status} value={status}>
@@ -858,6 +860,7 @@ export default function AdminPage() {
                   />
                   <button
                     type="button"
+                    disabled={!isAdmin}
                     onClick={() => {
                       updateDeliveryEta(selectedOrder.order_id, etaText);
                       const nextOrder = { ...selectedOrder, delivery_eta: etaText.trim() || "Waiting for owner confirmation" };
@@ -865,7 +868,7 @@ export default function AdminPage() {
                       notifyCustomerOrderUpdate(nextOrder, "eta", { eta: nextOrder.delivery_eta });
                       toast.success("Delivery time shared with customer");
                     }}
-                    className="rounded-md bg-leaf-600 px-3 py-2 font-bold text-white hover:bg-leaf-700"
+                    className="rounded-md bg-leaf-600 px-3 py-2 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                   >
                     Save delivery time
                   </button>
@@ -893,11 +896,12 @@ export default function AdminPage() {
               <DetailBlock title="Delivery Agent">
                 <select
                   value={selectedOrder.assigned_agent_id ?? ""}
+                  disabled={!isAdmin}
                   onChange={(event) => {
                     assignDeliveryAgent(selectedOrder.order_id, event.target.value);
                     setSelectedOrder((current) => (current ? { ...current, assigned_agent_id: event.target.value || undefined } : current));
                   }}
-                  className="w-full rounded-md border border-black/10 bg-white px-3 py-2"
+                  className="w-full rounded-md border border-black/10 bg-white px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Unassigned</option>
                   {agents.map((agent) => (

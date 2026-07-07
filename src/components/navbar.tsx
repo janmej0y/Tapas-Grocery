@@ -48,8 +48,15 @@ export function Navbar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isRecruiterDemo, setIsRecruiterDemo] = useState(false);
   const supabase = createSupabaseBrowserClient();
   const isCartPage = pathname === "/cart" || pathname === "/checkout";
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsRecruiterDemo(sessionStorage.getItem("recruiter-demo") === "true");
+    }
+  }, []);
 
   useEffect(() => {
     if (!supabase) {
@@ -69,6 +76,23 @@ export function Navbar() {
 
   return (
     <>
+      {isRecruiterDemo && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white py-2 px-4 shadow-inner text-center text-xs sm:text-sm font-black flex flex-wrap items-center justify-center gap-2">
+          <span>👁️ Recruiter Demo (View-Only Mode) — You can browse the site but cannot place orders.</span>
+          <Link href="/admin" className="rounded-full bg-white px-3 py-1 text-xs text-orange-600 font-extrabold hover:bg-orange-50 transition shadow-sm">
+            Go to Admin Dashboard
+          </Link>
+          <button
+            onClick={() => {
+              sessionStorage.removeItem("recruiter-demo");
+              window.location.reload();
+            }}
+            className="underline hover:text-orange-200 text-xs font-semibold ml-2"
+          >
+            Exit Demo
+          </button>
+        </div>
+      )}
       <div className="border-b border-zinc-100 bg-[#fafafa]">
         <div className="mx-auto flex max-w-7xl justify-end px-4 py-2 sm:px-6 lg:px-8">
           <LanguageToggle />
@@ -101,9 +125,9 @@ export function Navbar() {
             <Link href="/checkout" className="hidden items-center gap-2 rounded-full bg-primary-accent px-4 py-2 text-sm font-black text-white hover:bg-emerald-800 transition active:scale-[0.98] sm:inline-flex">
               Checkout
             </Link>
-            <Link href="/login" className="hidden items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-black hover:bg-emerald-50/50 md:inline-flex">
+            <Link href={isRecruiterDemo ? "/admin" : "/login"} className="hidden items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-black hover:bg-emerald-50/50 md:inline-flex">
               <UserRoundCheck className="h-4 w-4" aria-hidden="true" />
-              {user ? "Account" : "Login"}
+              {isRecruiterDemo ? "Demo Account" : user ? "Account" : "Login"}
             </Link>
           </div>
         </nav>
@@ -131,8 +155,12 @@ export function Navbar() {
             <div className="p-4">
               <p className="text-xs font-black uppercase text-slate-400">Menu</p>
               <div className="mt-3 rounded-lg bg-emerald-50/40 p-3 border border-emerald-100/40">
-                <p className="text-sm font-black text-heading">{user ? "Logged in" : "Not logged in"}</p>
-                <p className="mt-1 truncate text-sm text-slate-500 font-semibold">{user?.email ?? "Use email or Google login for your account."}</p>
+                <p className="text-sm font-black text-heading">
+                  {isRecruiterDemo ? "Recruiter Demo" : user ? "Logged in" : "Not logged in"}
+                </p>
+                <p className="mt-1 truncate text-sm text-slate-500 font-semibold">
+                  {isRecruiterDemo ? "recruiter@example.com (View-Only)" : user?.email ?? "Use email or Google login for your account."}
+                </p>
               </div>
               <div className="mt-3 grid gap-2">
                 {menuItems.map((item) => {
@@ -149,8 +177,19 @@ export function Navbar() {
                     </Link>
                   );
                 })}
-                {user ? (
-                  <button type="button" onClick={handleLogout} className="flex items-center justify-between rounded-lg border border-red-200 bg-white p-3 font-bold text-red-700 hover:bg-red-50">
+                {user || isRecruiterDemo ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (isRecruiterDemo) {
+                        sessionStorage.removeItem("recruiter-demo");
+                        window.location.href = "/";
+                      } else {
+                        await handleLogout();
+                      }
+                    }}
+                    className="flex items-center justify-between rounded-lg border border-red-200 bg-white p-3 font-bold text-red-700 hover:bg-red-50"
+                  >
                     <span className="inline-flex items-center gap-3">
                       <LogOut className="h-5 w-5" />
                       Logout
