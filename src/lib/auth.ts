@@ -33,12 +33,19 @@ export const authOptions: NextAuthOptions = {
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "missing-google-client-id",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "missing-google-client-secret"
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "missing-google-client-secret",
+      authorization: {
+        params: {
+          prompt: "select_account"
+        }
+      }
     })
   ],
   callbacks: {
-    async signIn({ user }) {
-      return user.email?.trim().toLowerCase() === ADMIN_AUTH_EMAIL;
+    async signIn() {
+      // Allow all users to sign in via Google or Credentials.
+      // Admin role is granted separately in the jwt callback.
+      return true;
     },
     async jwt({ token, user }) {
       if (user?.email?.trim().toLowerCase() === ADMIN_AUTH_EMAIL) {

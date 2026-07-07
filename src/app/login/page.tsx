@@ -80,7 +80,8 @@ export default function LoginPage() {
       return;
     }
 
-    const redirectUri = process.env.NEXT_PUBLIC_SUPABASE_REDIRECT_URI || `${window.location.origin}/login`;
+    // Dynamically derive redirect URI so it works on both localhost & Vercel
+    const redirectUri = `${window.location.origin}/login`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -99,7 +100,8 @@ async function handleRecruiterDemoLogin() {
   const demoUser = { id: "recruiter-demo", email: "recruiter@example.com", role: "recruiter-demo" } as any;
   setUser(demoUser);
   toast.success("Recruiter demo login successful!");
-  router.push("/");
+  // Redirect recruiter demo to admin dashboard (view‑only)
+  router.push("/admin");
   setIsSubmitting(false);
 }
 

@@ -26,10 +26,21 @@ export function PwaRegister() {
       const dismissedAt = Number(window.localStorage.getItem(INSTALL_DISMISSED_KEY) ?? 0);
       const dismissedRecently = dismissedAt && Date.now() - dismissedAt < 7 * 24 * 60 * 60 * 1000;
 
-      setInstallPrompt(event as BeforeInstallPromptEvent);
+      const promptEvent = event as BeforeInstallPromptEvent;
+      setInstallPrompt(promptEvent);
 
       if (!dismissedRecently && !isStandaloneApp()) {
+        // Show UI prompt
         setShowInstallPrompt(true);
+        // Also trigger the native install prompt to avoid console warning
+        promptEvent.prompt();
+        promptEvent.userChoice.then((choice) => {
+          if (choice.outcome === "dismissed") {
+            window.localStorage.setItem(INSTALL_DISMISSED_KEY, String(Date.now()));
+          }
+          setShowInstallPrompt(false);
+          setInstallPrompt(null);
+        });
       }
     }
 
