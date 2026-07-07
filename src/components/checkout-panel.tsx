@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import type { InputHTMLAttributes, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   BellRing,
   Bookmark,
@@ -14,6 +16,7 @@ import {
   Home,
   Info,
   LocateFixed,
+  Lock,
   MapPin,
   Minus,
   Navigation,
@@ -24,7 +27,8 @@ import {
   ShoppingCart,
   Trash2,
   Truck,
-  WalletCards
+  WalletCards,
+  X
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { FreeDeliveryProgress } from "@/components/checkout/free-delivery-progress";
@@ -81,8 +85,12 @@ export function CheckoutPanel() {
     products,
     removeFromCart,
     updateCustomerAddress,
-    updateQuantity
+    updateQuantity,
+    user,
+    logoutCustomer
   } = useStore();
+  const router = useRouter();
+  const [showRecruiterModal, setShowRecruiterModal] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState(customer.addresses[0]?.id ?? "manual");
   const [address, setAddress] = useState<UserAddress>(customer.addresses[0] ?? emptyAddress);
   const [promoCode, setPromoCode] = useState("");
@@ -138,6 +146,11 @@ export function CheckoutPanel() {
   }, [address]);
 
   async function placeOrder() {
+    if (user?.email === "recruiter@example.com") {
+      setShowRecruiterModal(true);
+      return;
+    }
+
     if (isBlockedPhone) {
       toast.error("This mobile number has been blocked by the store.");
       return;
@@ -873,6 +886,64 @@ export function CheckoutPanel() {
           </div>
         </div>
       ) : null}
+
+      <AnimatePresence>
+        {showRecruiterModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowRecruiterModal(false)}
+              className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.93, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.93, y: 15 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-white p-6 shadow-soft text-center"
+            >
+              <button
+                onClick={() => setShowRecruiterModal(false)}
+                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/5 text-slate-500 hover:bg-black/10 transition active:scale-95"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+                <Lock className="h-7 w-7 animate-bounce" />
+              </div>
+
+              <h2 className="mt-4 text-xl font-black text-ink">Demo Account Access</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500 leading-relaxed">
+                You have the permission to view. You can't order. You have to login with a customer account to order.
+              </p>
+
+              <div className="mt-6 flex flex-col gap-2">
+                <button
+                  onClick={async () => {
+                    const supabase = createSupabaseBrowserClient();
+                    await supabase?.auth.signOut();
+                    logoutCustomer();
+                    setShowRecruiterModal(false);
+                    router.push("/login");
+                  }}
+                  className="w-full rounded-full bg-[#15803d] px-4 py-3 font-bold text-white shadow-sm hover:bg-emerald-800 active:scale-[0.98]"
+                >
+                  Login with Customer Account
+                </button>
+                <button
+                  onClick={() => setShowRecruiterModal(false)}
+                  className="w-full rounded-full border border-slate-200 bg-white px-4 py-3 font-bold text-ink hover:bg-slate-50 active:scale-[0.98]"
+                >
+                  Continue Viewing
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

@@ -8,15 +8,23 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      router.push("/");
+    }
+  }, [user, router]);
 
   useEffect(() => {
     if (!supabase) {
@@ -72,17 +80,28 @@ export default function LoginPage() {
       return;
     }
 
+    const redirectUri = process.env.NEXT_PUBLIC_SUPABASE_REDIRECT_URI || `${window.location.origin}/login`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/login`
-      }
+        redirectTo: redirectUri,
+      },
     });
 
     if (error) {
       toast.error(error.message);
     }
   }
+
+async function handleRecruiterDemoLogin() {
+  setIsSubmitting(true);
+  // Hardcoded demo user without DB verification
+  const demoUser = { id: "recruiter-demo", email: "recruiter@example.com", role: "recruiter-demo" } as any;
+  setUser(demoUser);
+  toast.success("Recruiter demo login successful!");
+  router.push("/");
+  setIsSubmitting(false);
+}
 
   async function handleLogout() {
     if (!supabase) {
@@ -192,6 +211,17 @@ export default function LoginPage() {
               </button>
               <button type="button" onClick={handleGoogleLogin} className="w-full rounded-full border border-slate-200 bg-white px-4 py-3 font-bold shadow-sm transition-all hover:bg-leaf-50 active:scale-[0.995]">
                 Continue with Google
+              </button>
+              <div className="relative py-2 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                or
+              </div>
+              <button
+                type="button"
+                onClick={handleRecruiterDemoLogin}
+                disabled={isSubmitting}
+                className="w-full rounded-full bg-amber-500 hover:bg-amber-600 px-4 py-3 font-bold text-white shadow-md transition-colors duration-150 disabled:cursor-not-allowed disabled:bg-gray-300 active:scale-[0.995]"
+              >
+                {isSubmitting ? "Please wait..." : "Recruiter Demo Login"}
               </button>
             </div>
           )}

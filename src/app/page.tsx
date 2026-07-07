@@ -13,11 +13,45 @@ import { Select, Input } from "@/components/ui/input";
 import { useStore } from "@/components/store-provider";
 import { getCategoryCounts, PRODUCTS_PER_PAGE, storeCategories } from "@/lib/catalog";
 import { motion } from "framer-motion";
+import { OfferModal } from "@/components/offer-modal";
 
 export default function HomePage() {
   const { t } = useLanguage();
-  const { products } = useStore();
+  const { products, customer, orders, user } = useStore();
   const [activeFilter, setActiveFilter] = useState("all");
+  const [offerOpen, setOfferOpen] = useState(false);
+  const [offerType, setOfferType] = useState<"welcome" | "inactive">("welcome");
+
+  useEffect(() => {
+    if (!user) return;
+    const sessionKey = `tapas-offer-shown-${user.id}`;
+    const hasChecked = sessionStorage.getItem(sessionKey);
+    if (hasChecked === "true") return;
+
+    const customerOrders = orders.filter(
+      (order) => customer.orderIds.includes(order.order_id) || order.customer_phone === customer.phone
+    );
+
+    if (customerOrders.length === 0) {
+      setOfferType("welcome");
+      setOfferOpen(true);
+      sessionStorage.setItem(sessionKey, "true");
+    } else {
+      const sortedOrders = [...customerOrders].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      const latestOrder = sortedOrders[0];
+      const diffDays = (Date.now() - new Date(latestOrder.created_at).getTime()) / (1000 * 60 * 60 * 24);
+
+      if (diffDays > 7) {
+        setOfferType("inactive");
+        setOfferOpen(true);
+        sessionStorage.setItem(sessionKey, "true");
+      } else {
+        sessionStorage.setItem(sessionKey, "true");
+      }
+    }
+  }, [user, orders, customer]);
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
   const [preference, setPreference] = useState("all");
@@ -332,6 +366,8 @@ export default function HomePage() {
       <div id="assistant" className="scroll-mt-24">
         <AiAssistant />
       </div>
+
+      <OfferModal isOpen={offerOpen} onClose={() => setOfferOpen(false)} type={offerType} />
     </main>
   );
 }

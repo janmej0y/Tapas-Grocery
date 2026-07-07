@@ -796,6 +796,22 @@ export const promoCodes: PromoCode[] = [
     minCartTotal: 500,
     description: "₹50 off weekly grocery baskets",
     active: true
+  },
+  {
+    code: "WELCOME50",
+    type: "percentage",
+    value: 50,
+    minCartTotal: 100,
+    description: "50% welcome offer on your first order!",
+    active: true
+  },
+  {
+    code: "MISSYOU20",
+    type: "percentage",
+    value: 20,
+    minCartTotal: 150,
+    description: "20% off because we missed you!",
+    active: true
   }
 ];
 

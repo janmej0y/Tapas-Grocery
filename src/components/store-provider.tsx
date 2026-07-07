@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type Dispatch,
 import { isAdminPhone, normalizeLocalPhone } from "@/lib/admin-access";
 import { defaultCustomer, deliveryAgents, initialOrders, initialProducts } from "@/lib/mock-data";
 import type { AdminActivity, CartItem, CustomerAccount, DeliveryAgent, Order, OrderStatus, Product, ProductReview, RefundStatus, UserAddress } from "@/lib/types";
+import type { User } from "@supabase/supabase-js";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type ProductInput = Omit<Product, "id">;
 type StoredState = {
@@ -24,6 +26,8 @@ type StoreContextValue = {
   activityLog: AdminActivity[];
   agents: DeliveryAgent[];
   lowStockProducts: Product[];
+  user: User | null;
+  authLoading: boolean;
   logoutCustomer: () => void;
   updateCustomerAddress: (address: UserAddress) => void;
   toggleFavoriteProduct: (productId: string) => void;
@@ -56,6 +60,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [blockedPhones, setBlockedPhones] = useState<string[]>([]);
   const [activityLog, setActivityLog] = useState<AdminActivity[]>([]);
   const lowStockProducts = useMemo(() => products.filter((product) => product.stock <= (product.minStock ?? 10)), [products]);
+
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+
+  useEffect(() => {
+    if (!supabase) {
+      setAuthLoading(false);
+      return;
+    }
+
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ?? null);
+      setAuthLoading(false);
+    }).catch(() => {
+      setAuthLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [supabase]);
+
+  useEffect(() => {
+    if (user) {
+      setCustomer((current) => {
+        if (current.id === "cus-default" || current.phone === "") {
+          return {
+            id: user.id,
+            name: user.user_metadata?.name || user.email?.split("@")[0] || "Customer",
+            phone: current.phone || user.phone || "",
+            isBlocked: false,
+            addresses: current.addresses,
+            orderIds: current.orderIds,
+            favoriteProductIds: current.favoriteProductIds
+          };
+        }
+        return current;
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -123,8 +171,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       activityLog,
       agents: deliveryAgents,
       lowStockProducts,
+      user,
+      authLoading,
       logoutCustomer: () => {
         setCart([]);
+        setCustomer(defaultCustomer);
       },
       updateCustomerAddress: (address) => {
         setCustomer((current) => {
@@ -390,7 +441,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
       }
     }),
-    [activityLog, blockedPhones, cart, customer, lowStockProducts, orders, products]
+    [activityLog, blockedPhones, cart, customer, lowStockProducts, orders, products, user, authLoading]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

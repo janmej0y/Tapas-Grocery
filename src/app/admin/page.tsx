@@ -714,10 +714,10 @@ export default function AdminPage() {
                     <td className="px-4 py-3">{product.stock}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button type="button" onClick={() => editProduct(product)} className="rounded-md border border-black/10 p-2 hover:bg-leaf-50" aria-label={t("edit")}>
+                        <button type="button" onClick={() => editProduct(product)} className="rounded-md border border-black/10 p-2 hover:bg-leaf-50" aria-label={t("edit")} disabled={!isAdmin}>
                           <Edit3 className="h-4 w-4" />
                         </button>
-                        <button type="button" onClick={() => deleteProduct(product.id)} className="rounded-md border border-black/10 p-2 text-red-700 hover:bg-red-50" aria-label={t("delete")}>
+                        <button type="button" onClick={() => deleteProduct(product.id)} className="rounded-md border border-black/10 p-2 text-red-700 hover:bg-red-50" aria-label={t("delete")} disabled={!isAdmin}>
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
