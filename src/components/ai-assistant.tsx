@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Send } from "lucide-react";
+import { Bot, Send, X, Sparkles, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import { useLanguage } from "@/components/language-provider";
 
