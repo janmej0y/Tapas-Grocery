@@ -31,8 +31,8 @@ export function FreeDeliveryProgress({ cartTotal, distanceKm }: { cartTotal?: nu
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
       className={cn(
-        "rounded-2xl border bg-white p-4 shadow-sm sm:p-5",
-        unavailable ? "border-red-100" : unlocked ? "border-emerald-100" : "border-[#ECECEC]"
+        "rounded-2xl border bg-white p-4 shadow-card sm:p-5",
+        unavailable ? "border-red-100" : unlocked ? "border-leaf-100" : "border-zinc-200"
       )}
       aria-label="Delivery fee progress"
     >
@@ -40,7 +40,7 @@ export function FreeDeliveryProgress({ cartTotal, distanceKm }: { cartTotal?: nu
         <div
           className={cn(
             "grid h-12 w-12 shrink-0 place-items-center rounded-full",
-            unavailable ? "bg-red-50 text-red-700" : unlocked ? "bg-emerald-50 text-[#15803d]" : "bg-emerald-50 text-[#15803d]"
+            unavailable ? "bg-red-50 text-red-700" : unlocked ? "bg-leaf-50 text-primary-accent" : "bg-slate-50 text-ink/70"
           )}
         >
           {unavailable ? <AlertTriangle className="h-5 w-5" /> : unlocked ? <CheckCircle2 className="h-5 w-5" /> : <Truck className="h-5 w-5" />}
@@ -49,10 +49,10 @@ export function FreeDeliveryProgress({ cartTotal, distanceKm }: { cartTotal?: nu
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-sm font-black text-ink">Free Delivery Progress</h2>
-              <p className={cn("mt-1 text-sm font-bold", unavailable ? "text-red-700" : "text-[#15803d]")}>{message}</p>
+              <h2 className="text-sm font-semibold text-ink">Free Delivery Progress</h2>
+              <p className={cn("mt-1 text-sm font-semibold", unavailable ? "text-red-700" : "text-primary-accent")}>{message}</p>
             </div>
-            <p className="shrink-0 text-sm font-black text-ink">
+            <p className="shrink-0 text-sm font-bold text-ink">
               {formatCurrency(Math.min(total, threshold))} / {formatCurrency(threshold)}
             </p>
           </div>
@@ -63,12 +63,12 @@ export function FreeDeliveryProgress({ cartTotal, distanceKm }: { cartTotal?: nu
                 initial={{ width: 0 }}
                 animate={{ width: `${unavailable ? 100 : percent}%` }}
                 transition={{ duration: 0.38, ease: "easeOut" }}
-                className={cn("h-full rounded-full", unavailable ? "bg-red-500" : "bg-[#15803d]")}
+                className={cn("h-full rounded-full", unavailable ? "bg-red-500" : "bg-primary-accent")}
               />
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-slate-500">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-slate-500">
             <span>{hasDistance ? `${distanceKm.toFixed(2)} km from store` : "Add address for exact delivery fee"}</span>
             <span>{unavailable ? "Unavailable" : delivery.fee === 0 ? "Free delivery" : `${formatCurrency(delivery.fee)} delivery charge`}</span>
           </div>

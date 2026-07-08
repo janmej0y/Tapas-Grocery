@@ -51,7 +51,7 @@ export function OfferModal({ isOpen, onClose, type }: OfferModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.93, y: 15 }}
             transition={{ type: "spring", duration: 0.5 }}
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-white shadow-soft"
+            className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-white shadow-modal"
           >
             {/* Close Button */}
             <button
@@ -66,7 +66,7 @@ export function OfferModal({ isOpen, onClose, type }: OfferModalProps) {
             <div
               className={`relative flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br p-6 text-white ${
                 type === "welcome"
-                  ? "from-emerald-600 to-teal-800"
+                  ? "from-leaf-600 to-teal-800"
                   : "from-amber-500 to-rose-600"
               }`}
             >
@@ -86,7 +86,7 @@ export function OfferModal({ isOpen, onClose, type }: OfferModalProps) {
                     <Heart className="h-7 w-7 text-white fill-white" />
                   )}
                 </motion.div>
-                <h2 className="mt-2 text-2xl font-black tracking-normal">{title}</h2>
+                <h2 className="mt-2 text-2xl font-bold tracking-normal">{title}</h2>
               </div>
             </div>
 
@@ -99,25 +99,25 @@ export function OfferModal({ isOpen, onClose, type }: OfferModalProps) {
                 <span className="block text-4xl font-black tracking-tight text-ink">
                   {discountText}
                 </span>
-                <span className="mt-1 block text-xs font-black uppercase tracking-wider text-slate-400">
+                <span className="mt-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
                   {minOrderText}
                 </span>
               </div>
 
               {/* Promo Code Copy Area */}
               <div className="space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">
+                <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
                   Use Promo Code
                 </span>
-                <div className="flex items-center justify-between rounded-full border border-dashed border-[#15803d]/40 bg-emerald-50/50 p-1.5 pl-5">
-                  <span className="font-mono text-lg font-black tracking-wider text-[#15803d]">
+                <div className="flex items-center justify-between rounded-full border border-dashed border-primary-accent/40 bg-leaf-50/50 p-1.5 pl-5">
+                  <span className="font-mono text-lg font-bold tracking-wider text-primary-accent">
                     {code}
                   </span>
                   <button
                     onClick={handleCopy}
-                    className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-black shadow-sm transition active:scale-95 ${
+                    className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow-card transition active:scale-95 ${
                       copied
-                        ? "bg-[#15803d] text-white"
+                        ? "bg-primary-accent text-white"
                         : "bg-white text-ink border border-slate-200 hover:bg-slate-50"
                     }`}
                   >
@@ -139,7 +139,7 @@ export function OfferModal({ isOpen, onClose, type }: OfferModalProps) {
               {/* Action Button */}
               <button
                 onClick={onClose}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#15803d] px-6 py-3 font-bold text-white shadow-soft transition hover:bg-emerald-800 active:scale-[0.985]"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-6 py-3 font-bold text-white shadow-soft transition hover:bg-leaf-800 active:scale-[0.985]"
               >
                 <Gift className="h-4 w-4" />
                 Apply & Start Shopping

@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { motion } from "framer-motion";
 import { AlertTriangle, Ban, BellRing, Download, Edit3, Eye, FileText, History, IndianRupee, LayoutDashboard, MessageCircle, PackagePlus, Save, Trash2, Truck, Undo2, Upload, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/language-provider";
 import { useStore } from "@/components/store-provider";
 import { ADMIN_PHONE } from "@/lib/admin-access";
@@ -38,6 +40,12 @@ const adminSections: Array<{ id: AdminSection; label: string }> = [
   { id: "users", label: "Users" },
   { id: "overview", label: "Overview" }
 ];
+
+const cardMotion = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.28, ease: "easeOut" }
+} as const;
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -77,16 +85,10 @@ export default function AdminPage() {
   const [activeAdminSection, setActiveAdminSection] = useState<AdminSection>("orders");
 
   const isAdmin = session?.user?.role === "admin";
-  const [isRecruiterDemo, setIsRecruiterDemo] = useState(false);
 
-  // Detect recruiter demo session from sessionStorage (set by login page)
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsRecruiterDemo(sessionStorage.getItem("recruiter-demo") === "true");
-    }
-  }, []);
-
-  const canView = isAdmin || isRecruiterDemo;
+  // Recruiter demo accounts are view-only storefront visitors and must never
+  // reach the admin dashboard, so admin access is gated on isAdmin alone.
+  const canView = isAdmin;
   const revenue = useMemo(() => orders.reduce((total, order) => total + order.total_amount, 0), [orders]);
   const dailyRevenue = useMemo(() => buildDailyRevenue(orders), [orders]);
   const topSelling = useMemo(() => buildTopSelling(orders), [orders]);
@@ -330,7 +332,7 @@ export default function AdminPage() {
     }
   }
 
-  if (status === "loading" && !isRecruiterDemo) {
+  if (status === "loading") {
     return <main className="mx-auto max-w-7xl px-4 py-10">Loading secure session...</main>;
   }
 
@@ -353,18 +355,14 @@ export default function AdminPage() {
     }
 
     return (
-      <main className="mx-auto grid min-h-[calc(100vh-73px)] max-w-md place-items-center px-4 py-12">
-        <section className="w-full rounded-lg border border-black/10 bg-white p-6 shadow-soft">
+      <main className="app-bg grid min-h-[calc(100vh-73px)] place-items-center px-4 py-12">
+        <motion.section {...cardMotion} className="premium-card w-full max-w-md rounded-2xl p-6">
           <h1 className="text-3xl font-black text-ink">{t("adminLogin")}</h1>
           <p className="mt-2 text-sm text-ink/65">Only borj18237@gmail.com can unlock the dashboard.</p>
           <div className="mt-6 space-y-3">
-            <button
-              type="button"
-              onClick={() => signIn("google", { callbackUrl: "/admin" })}
-              className="w-full rounded-md bg-primary-accent px-4 py-3 font-bold text-white hover:bg-primary-accent/90"
-            >
+            <Button type="button" shape="pill" className="w-full py-3" onClick={() => signIn("google", { callbackUrl: "/admin" })}>
               Continue with Google
-            </button>
+            </Button>
             <div className="relative py-2 text-center text-xs font-black uppercase tracking-[0.16em] text-ink/45">
               Email password
             </div>
@@ -373,7 +371,7 @@ export default function AdminPage() {
               <input
                 value={adminEmail}
                 onChange={(event) => setAdminEmail(event.target.value)}
-                className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2"
+                className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-3 py-3 shadow-sm outline-none transition-colors focus:border-primary-accent"
                 inputMode="email"
               />
             </label>
@@ -387,67 +385,48 @@ export default function AdminPage() {
                     handleCredentialSignIn();
                   }
                 }}
-                className="mt-2 w-full rounded-md border border-black/10 bg-white px-3 py-2"
+                className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-3 py-3 shadow-sm outline-none transition-colors focus:border-primary-accent"
                 type="password"
               />
             </label>
-            <button
+            <Button
               type="button"
+              variant="dark"
+              shape="pill"
+              className="w-full py-3"
               onClick={handleCredentialSignIn}
-              disabled={isSigningIn}
-              className="w-full rounded-md bg-ink px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              loading={isSigningIn}
+              loadingText="Signing in..."
             >
-              {isSigningIn ? "Signing in..." : "Login with Email"}
-            </button>
+              Login with Email
+            </Button>
           </div>
-        </section>
+        </motion.section>
       </main>
     );
   }
 
   return (
-    <main className="bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
-      {isRecruiterDemo && (
-        <div className="mx-auto mb-4 max-w-7xl rounded-lg border border-amber-200 bg-amber-50 px-5 py-3 flex items-center gap-3">
-          <span className="text-lg">👁️</span>
-          <div>
-            <p className="font-black text-amber-800">Recruiter Demo — View Only</p>
-            <p className="text-sm text-amber-700">You can browse everything but cannot add, edit, or delete any data.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => { sessionStorage.removeItem("recruiter-demo"); window.location.href = "/login"; }}
-            className="ml-auto rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-bold text-amber-800 hover:bg-amber-100"
-          >
-            Exit Demo
-          </button>
-        </div>
-      )}
-      <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 rounded-lg border border-emerald-100 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
+    <main className="app-bg px-4 py-10 sm:px-6 lg:px-8">
+      <motion.div {...cardMotion} className="premium-card mx-auto flex max-w-7xl flex-col justify-between gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
         <div>
           <p className="text-sm font-black uppercase text-primary-accent">Owner operations</p>
           <h1 className="text-4xl font-black text-ink">{t("dashboard")}</h1>
           <p className="mt-2 text-ink/65">Secure owner controls for products, inventory, analytics, and incoming orders.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            signOut({ callbackUrl: "/" });
-          }}
-          className="rounded-md border border-black/10 bg-white px-4 py-2 font-bold hover:bg-primary-accent/10"
-        >
+        <Button type="button" variant="outline" shape="pill" onClick={() => signOut({ callbackUrl: "/" })}>
           {t("logout")}
-        </button>
-      </div>
+        </Button>
+      </motion.div>
 
-      <nav className="sticky top-[73px] z-30 mx-auto mt-4 flex max-w-7xl gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm [scrollbar-width:none]">
+      <nav className="sticky top-[73px] z-30 mx-auto mt-4 flex max-w-7xl gap-2 overflow-x-auto rounded-2xl border border-zinc-200 bg-white/95 p-2 shadow-sm backdrop-blur [scrollbar-width:none]">
         {adminSections.map((section) => (
           <button
             key={section.id}
             type="button"
             onClick={() => setActiveAdminSection(section.id)}
-            className={`min-h-11 shrink-0 rounded-md px-4 text-sm font-black transition ${
-              activeAdminSection === section.id ? "bg-primary-accent/90 text-white" : "bg-slate-50 text-ink hover:bg-leaf-50"
+            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-black transition ${
+              activeAdminSection === section.id ? "bg-primary-accent text-white shadow-sm" : "bg-transparent text-ink hover:bg-leaf-50"
             }`}
           >
             {section.label}
@@ -455,23 +434,18 @@ export default function AdminPage() {
         ))}
       </nav>
 
-      <section className={`mx-auto mt-6 max-w-7xl rounded-lg border border-emerald-100 bg-white p-5 shadow-sm ${activeAdminSection === "overview" ? "" : "hidden"}`}>
+      <motion.section {...cardMotion} className={`premium-card mx-auto mt-6 max-w-7xl rounded-2xl p-5 ${activeAdminSection === "overview" ? "" : "hidden"}`}>
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-xl font-black text-ink">Order notifications</h2>
             <p className="mt-1 text-sm text-ink/65">Enable Web Push to receive new-order alerts even when the PWA is closed.</p>
           </div>
-          <button
-            type="button"
-            onClick={enablePushNotifications}
-            disabled={isEnablingPush}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
+          <Button type="button" shape="pill" onClick={enablePushNotifications} loading={isEnablingPush} loadingText="Enabling...">
             <BellRing className="h-4 w-4" />
-            {isEnablingPush ? "Enabling..." : "Enable notifications"}
-          </button>
+            Enable notifications
+          </Button>
         </div>
-      </section>
+      </motion.section>
 
       <section aria-label={t("overview")} className={`mx-auto mt-8 max-w-7xl gap-4 sm:grid-cols-3 ${activeAdminSection === "overview" ? "grid" : "hidden"}`}>
         <Metric title={t("products")} value={products.length.toString()} icon={<PackagePlus className="h-5 w-5" />} />
@@ -479,27 +453,22 @@ export default function AdminPage() {
         <Metric title={t("revenue")} value={formatCurrency(revenue)} icon={<IndianRupee className="h-5 w-5" />} />
       </section>
 
-      <section className={`mx-auto mt-6 max-w-7xl rounded-lg border border-emerald-100 bg-white p-5 shadow-sm ${activeAdminSection === "products" ? "" : "hidden"}`}>
+      <motion.section {...cardMotion} className={`premium-card mx-auto mt-6 max-w-7xl rounded-2xl p-5 ${activeAdminSection === "products" ? "" : "hidden"}`}>
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-xl font-black text-ink">Seed full catalog</h2>
             <p className="mt-1 text-sm text-ink/65">Add missing built-in grocery products to Supabase without deleting your manually uploaded products.</p>
           </div>
-          <button
-            type="button"
-            onClick={seedSupabaseProducts}
-            disabled={isSeedingProducts || !isAdmin}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
+          <Button type="button" variant="dark" shape="pill" onClick={seedSupabaseProducts} disabled={!isAdmin} loading={isSeedingProducts} loadingText="Adding...">
             <Upload className="h-4 w-4" />
-            {isSeedingProducts ? "Adding..." : "Add missing products"}
-          </button>
+            Add missing products
+          </Button>
         </div>
-      </section>
+      </motion.section>
 
-      <section className={`mx-auto mt-8 max-w-7xl rounded-lg border border-red-100 bg-white p-5 shadow-sm ${activeAdminSection === "products" ? "" : "hidden"}`}>
+      <motion.section {...cardMotion} className={`premium-card mx-auto mt-8 max-w-7xl rounded-2xl border-red-100 p-5 ${activeAdminSection === "products" ? "" : "hidden"}`}>
         <div className="flex items-center gap-3">
-          <span className="rounded-md bg-red-50 p-2 text-red-700">
+          <span className="rounded-full bg-red-50 p-2 text-red-700">
             <AlertTriangle className="h-5 w-5" />
           </span>
           <div>
@@ -518,12 +487,12 @@ export default function AdminPage() {
             ))
           )}
         </div>
-      </section>
+      </motion.section>
 
       <section className={`mx-auto mt-8 max-w-7xl gap-4 lg:grid-cols-[0.75fr_1.25fr] ${activeAdminSection === "products" ? "grid" : "hidden"}`}>
-        <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+        <motion.div {...cardMotion} className="premium-card rounded-2xl p-5">
           <div className="flex items-center gap-3">
-            <span className="rounded-md bg-leaf-50 p-2 text-primary-accent">
+            <span className="rounded-full bg-leaf-50 p-2 text-primary-accent">
               <Upload className="h-5 w-5" />
             </span>
             <div>
@@ -532,22 +501,22 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <button type="button" onClick={exportProductsCsv} className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 font-bold text-white hover:bg-leaf-700">
+            <Button type="button" variant="dark" shape="pill" onClick={exportProductsCsv}>
               <Download className="h-4 w-4" />
               Export CSV
-            </button>
-            <label className={`inline-flex items-center justify-center gap-2 rounded-md border border-black/10 bg-white px-4 py-3 font-bold ${isAdmin ? "cursor-pointer hover:bg-leaf-50" : "cursor-not-allowed bg-gray-100 text-gray-400"}`}>
+            </Button>
+            <label className={`inline-flex items-center justify-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-3 font-bold shadow-sm transition-colors ${isAdmin ? "cursor-pointer hover:bg-leaf-50" : "cursor-not-allowed bg-zinc-100 text-zinc-400"}`}>
               <Upload className="h-4 w-4" />
               Import CSV
               <input type="file" accept=".csv,text/csv" disabled={!isAdmin} onChange={(event) => importProductsCsv(event.target.files?.[0])} className="sr-only" />
             </label>
           </div>
           <p className="mt-3 text-xs text-ink/55">Image uploads should use Supabase Storage in production. CSV currently accepts image_url values for fast catalog entry.</p>
-        </div>
+        </motion.div>
 
-        <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+        <motion.div {...cardMotion} className="premium-card rounded-2xl p-5">
           <div className="flex items-center gap-3">
-            <span className="rounded-md bg-leaf-50 p-2 text-primary-accent">
+            <span className="rounded-full bg-leaf-50 p-2 text-primary-accent">
               <History className="h-5 w-5" />
             </span>
             <div>
@@ -555,39 +524,40 @@ export default function AdminPage() {
               <p className="text-sm text-ink/65">Tracks important product, order, user, refund, and ETA changes.</p>
             </div>
           </div>
-          <div className="mt-4 max-h-72 overflow-auto rounded-lg border border-black/10">
+          <div className="mt-4 max-h-72 overflow-auto rounded-2xl border border-zinc-100">
             {activityLog.length ? activityLog.slice(0, 20).map((item) => (
-              <div key={item.id} className="border-b border-black/10 p-3 text-sm last:border-b-0">
+              <div key={item.id} className="border-b border-zinc-100 p-3 text-sm last:border-b-0">
                 <p className="font-black text-ink">{item.action}</p>
                 <p className="text-ink/70">{item.details}</p>
                 <p className="mt-1 text-xs text-ink/45">{new Date(item.created_at).toLocaleString("en-IN")}</p>
               </div>
             )) : <p className="p-4 text-sm text-ink/60">No admin activity yet.</p>}
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      <section className={`mx-auto mt-8 max-w-7xl rounded-lg border border-slate-200 bg-white p-5 shadow-sm ${activeAdminSection === "users" ? "" : "hidden"}`}>
+      <motion.section {...cardMotion} className={`premium-card mx-auto mt-8 max-w-7xl rounded-2xl p-5 ${activeAdminSection === "users" ? "" : "hidden"}`}>
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
             <h2 className="text-2xl font-black text-ink">User blocking</h2>
             <p className="mt-1 text-sm text-ink/65">Block a customer by mobile number. Blocked users cannot place orders.</p>
           </div>
           <div className="flex gap-2">
-            <input value={blockPhoneInput} onChange={(event) => setBlockPhoneInput(event.target.value)} className="min-w-0 rounded-md border border-black/10 px-3 py-2" placeholder="10 digit mobile" />
-            <button
+            <input value={blockPhoneInput} onChange={(event) => setBlockPhoneInput(event.target.value)} className="min-w-0 rounded-full border border-zinc-200 px-4 py-2 shadow-sm outline-none transition-colors focus:border-primary-accent" placeholder="10 digit mobile" />
+            <Button
               type="button"
+              variant="danger"
+              shape="pill"
               disabled={!isAdmin}
               onClick={() => {
                 blockPhone(blockPhoneInput);
                 toast.success("Phone blocked");
                 setBlockPhoneInput("");
               }}
-              className="inline-flex items-center gap-2 rounded-md bg-red-700 px-4 py-2 font-bold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               <Ban className="h-4 w-4" />
               Block
-            </button>
+            </Button>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -607,7 +577,7 @@ export default function AdminPage() {
             );
           })}
         </div>
-      </section>
+      </motion.section>
 
       <section className={`mx-auto mt-8 max-w-7xl gap-4 lg:grid-cols-3 ${activeAdminSection === "analytics" ? "grid" : "hidden"}`}>
         <ChartPanel title="Daily revenue">
@@ -617,7 +587,7 @@ export default function AdminPage() {
               <XAxis dataKey="day" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="revenue" stroke="#2f9e44" strokeWidth={3} />
+              <Line type="monotone" dataKey="revenue" stroke="#0d3b26" strokeWidth={3} />
             </LineChart>
           </ResponsiveContainer>
         </ChartPanel>
@@ -628,7 +598,7 @@ export default function AdminPage() {
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="quantity" fill="#f59f00" />
+              <Bar dataKey="quantity" fill="#b8860b" />
             </BarChart>
           </ResponsiveContainer>
         </ChartPanel>
@@ -639,27 +609,27 @@ export default function AdminPage() {
               <XAxis dataKey="hour" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="orders" fill="#17211b" />
+              <Bar dataKey="orders" fill="#0f172a" />
             </BarChart>
           </ResponsiveContainer>
         </ChartPanel>
       </section>
 
       <section className={`mx-auto mt-10 max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr] ${activeAdminSection === "products" ? "grid" : "hidden"}`}>
-        <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+        <motion.div {...cardMotion} className="premium-card rounded-2xl p-5">
           <h2 className="text-2xl font-black text-ink">{editingProductId ? t("updateProduct") : t("addProduct")}</h2>
           <div className="mt-5 space-y-4">
             <AdminInput label={t("name")} value={form.name} onChange={(value) => setForm((current) => ({ ...current, name: value }))} />
             <label className="block">
               <span className="text-sm font-bold">{t("category")}</span>
-              <select value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value as ProductCategory }))} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2">
+              <select value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value as ProductCategory }))} className="mt-2 w-full rounded-2xl border border-zinc-200 px-3 py-3 shadow-sm outline-none transition-colors focus:border-primary-accent">
                 <option value="grocery">Grocery Items</option>
               </select>
             </label>
             <AdminInput label={t("brand")} value={form.brand} onChange={(value) => setForm((current) => ({ ...current, brand: value }))} />
             <label className="block">
               <span className="text-sm font-bold">Description</span>
-              <textarea value={form.description ?? ""} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="mt-2 min-h-24 w-full rounded-md border border-black/10 px-3 py-2" />
+              <textarea value={form.description ?? ""} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="mt-2 min-h-24 w-full rounded-2xl border border-zinc-200 px-3 py-3 shadow-sm outline-none transition-colors focus:border-primary-accent" />
             </label>
             <label className="block">
               <span className="text-sm font-bold">Product packaging</span>
@@ -676,7 +646,7 @@ export default function AdminPage() {
                     setVariantPricesText("1 pack:0");
                   }
                 }}
-                className="mt-2 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-2 w-full rounded-2xl border border-zinc-200 px-3 py-3 shadow-sm outline-none transition-colors focus:border-primary-accent"
               >
                 <option value="weight">Loose product (Gram / Kg)</option>
                 <option value="package">Packaged product</option>
@@ -691,12 +661,12 @@ export default function AdminPage() {
             <AdminInput label={t("imageUrl")} value={form.image_url} onChange={(value) => setForm((current) => ({ ...current, image_url: value }))} />
             <label className="block">
               <span className="text-sm font-bold">Upload product photo</span>
-              <input type="file" accept="image/*" disabled={!isAdmin} onChange={(event) => uploadProductImage(event.target.files?.[0])} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" />
+              <input type="file" accept="image/*" disabled={!isAdmin} onChange={(event) => uploadProductImage(event.target.files?.[0])} className="mt-2 w-full rounded-2xl border border-zinc-200 px-3 py-3 shadow-sm disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed" />
             </label>
             <AdminInput label={t("stock")} type="number" value={String(form.stock)} onChange={(value) => setForm((current) => ({ ...current, stock: Number(value) }))} />
             <AdminInput label="Low-stock threshold" type="number" value={String(form.minStock ?? 10)} onChange={(value) => setForm((current) => ({ ...current, minStock: Number(value) }))} />
             {form.unitType === "weight" ? (
-              <div className="rounded-lg border border-leaf-100 bg-leaf-50 p-3 text-sm font-semibold text-ink/70">
+              <div className="rounded-2xl border border-leaf-100 bg-leaf-50 p-3 text-sm font-semibold text-ink/70">
                 Loose products use fixed options from 25 Gram to 5 Kg. Prices are auto-calculated from the 25 Gram price.
               </div>
             ) : (
@@ -707,14 +677,14 @@ export default function AdminPage() {
             )}
             <AdminInput label="Dietary tags" value={dietaryText} onChange={setDietaryText} />
           </div>
-          <button type="button" onClick={submitProduct} disabled={!isAdmin} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300">
+          <Button type="button" shape="pill" onClick={submitProduct} disabled={!isAdmin} className="mt-5 w-full py-3">
             <Save className="h-4 w-4" />
             {editingProductId ? t("updateProduct") : t("addProduct")}
-          </button>
-        </div>
+          </Button>
+        </motion.div>
 
-        <div className="overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm">
-          <div className="border-b border-black/10 p-5">
+        <motion.div {...cardMotion} className="premium-card overflow-hidden rounded-2xl">
+          <div className="border-b border-zinc-100 p-5">
             <h2 className="text-2xl font-black text-ink">{t("productManagement")}</h2>
           </div>
           <div className="overflow-x-auto">
@@ -741,10 +711,10 @@ export default function AdminPage() {
                     <td className="px-4 py-3">{product.stock}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button type="button" onClick={() => editProduct(product)} className="rounded-md border border-black/10 p-2 hover:bg-leaf-50" aria-label={t("edit")} disabled={!isAdmin}>
+                        <button type="button" onClick={() => editProduct(product)} className="rounded-full border border-zinc-200 p-2 hover:bg-leaf-50 disabled:cursor-not-allowed disabled:opacity-50" aria-label={t("edit")} disabled={!isAdmin}>
                           <Edit3 className="h-4 w-4" />
                         </button>
-                        <button type="button" onClick={() => deleteProduct(product.id)} className="rounded-md border border-black/10 p-2 text-red-700 hover:bg-red-50" aria-label={t("delete")} disabled={!isAdmin}>
+                        <button type="button" onClick={() => deleteProduct(product.id)} className="rounded-full border border-zinc-200 p-2 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50" aria-label={t("delete")} disabled={!isAdmin}>
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -754,11 +724,11 @@ export default function AdminPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      <section className={`mx-auto mt-10 max-w-7xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${activeAdminSection === "orders" ? "" : "hidden"}`}>
-        <div className="border-b border-black/10 p-5">
+      <motion.section {...cardMotion} className={`premium-card mx-auto mt-10 max-w-7xl overflow-hidden rounded-2xl ${activeAdminSection === "orders" ? "" : "hidden"}`}>
+        <div className="border-b border-zinc-100 p-5">
           <h2 className="text-2xl font-black text-ink">{t("orderManagement")}</h2>
         </div>
         <div className="overflow-x-auto">
@@ -797,7 +767,7 @@ export default function AdminPage() {
                         updateOrderStatus(order.order_id, statusValue);
                         notifyCustomerOrderUpdate({ ...order, status: statusValue }, "status", { status: statusValue });
                       }}
-                      className="rounded-md border border-black/10 px-2 py-2 text-sm font-bold disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="rounded-full border border-zinc-200 px-3 py-2 text-sm font-bold disabled:bg-zinc-100 disabled:cursor-not-allowed"
                     >
                       {["Pending", "Accepted", "Preparing", "Out for delivery", "Delivered", "Cancelled", "Refunded"].map((status) => (
                         <option key={status} value={status}>
@@ -807,36 +777,37 @@ export default function AdminPage() {
                     </select>
                   </td>
                   <td className="px-4 py-3">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      shape="pill"
                       onClick={() => {
                         setSelectedOrder(order);
                         setEtaText(order.delivery_eta);
                       }}
-                      className="inline-flex items-center gap-2 rounded-md border border-black/10 px-3 py-2 font-bold hover:bg-leaf-50"
                     >
                       <Eye className="h-4 w-4" />
                       View
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
+      </motion.section>
 
       {selectedOrder ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-          <section className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white p-6 shadow-soft">
+          <motion.section {...cardMotion} className="premium-card max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-ink">Order {selectedOrder.order_id}</h2>
                 <p className="mt-1 text-sm text-ink/65">{new Date(selectedOrder.created_at).toLocaleString("en-IN")}</p>
               </div>
-              <button type="button" onClick={() => setSelectedOrder(null)} className="rounded-md border border-black/10 px-3 py-2 font-bold">
+              <Button type="button" variant="outline" shape="pill" onClick={() => setSelectedOrder(null)}>
                 Close
-              </button>
+              </Button>
             </div>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <DetailBlock title="Customer">
@@ -855,11 +826,12 @@ export default function AdminPage() {
                   <input
                     value={etaText}
                     onChange={(event) => setEtaText(event.target.value)}
-                    className="w-full rounded-md border border-black/10 bg-white px-3 py-2"
+                    className="w-full rounded-full border border-zinc-200 bg-white px-3 py-2"
                     placeholder="Example: 30 minutes or Today by 7 PM"
                   />
-                  <button
+                  <Button
                     type="button"
+                    shape="pill"
                     disabled={!isAdmin}
                     onClick={() => {
                       updateDeliveryEta(selectedOrder.order_id, etaText);
@@ -868,10 +840,9 @@ export default function AdminPage() {
                       notifyCustomerOrderUpdate(nextOrder, "eta", { eta: nextOrder.delivery_eta });
                       toast.success("Delivery time shared with customer");
                     }}
-                    className="rounded-md bg-leaf-600 px-3 py-2 font-bold text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                   >
                     Save delivery time
-                  </button>
+                  </Button>
                 </div>
               </DetailBlock>
               <DetailBlock title="Delivery Address">
@@ -901,7 +872,7 @@ export default function AdminPage() {
                     assignDeliveryAgent(selectedOrder.order_id, event.target.value);
                     setSelectedOrder((current) => (current ? { ...current, assigned_agent_id: event.target.value || undefined } : current));
                   }}
-                  className="w-full rounded-md border border-black/10 bg-white px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full rounded-full border border-zinc-200 bg-white px-3 py-2 disabled:bg-zinc-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Unassigned</option>
                   {agents.map((agent) => (
@@ -919,8 +890,8 @@ export default function AdminPage() {
             <DetailBlock title="Items">
               <p>{selectedOrder.items_ordered}</p>
             </DetailBlock>
-            <div className="mt-4 overflow-hidden rounded-lg border border-emerald-200 bg-white shadow-sm">
-              <div className="border-b border-emerald-100 bg-leaf-700 p-4 text-white">
+            <div className="mt-4 overflow-hidden rounded-2xl border border-leaf-200 bg-white shadow-sm">
+              <div className="border-b border-leaf-100 bg-leaf-700 p-4 text-white">
                 <p className="text-xs font-black uppercase text-white/75">Customer invoice</p>
                 <div className="mt-1 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
                   <div>
@@ -931,35 +902,37 @@ export default function AdminPage() {
                 </div>
               </div>
               <div className="grid gap-3 p-4 md:grid-cols-3">
-                <div className="rounded-lg bg-slate-50 p-3">
+                <div className="rounded-2xl bg-slate-50 p-3">
                   <p className="text-xs font-black uppercase text-ink/45">Subtotal</p>
                   <p className="mt-1 font-black text-ink">{formatCurrency(selectedOrder.subtotal)}</p>
                 </div>
-                <div className="rounded-lg bg-amber-50 p-3">
+                <div className="rounded-2xl bg-amber-50 p-3">
                   <p className="text-xs font-black uppercase text-amber-700">Discount</p>
                   <p className="mt-1 font-black text-ink">{formatCurrency(selectedOrder.discount_amount)}</p>
                 </div>
-                <div className="rounded-lg bg-leaf-50 p-3">
+                <div className="rounded-2xl bg-leaf-50 p-3">
                   <p className="text-xs font-black uppercase text-primary-accent">Delivery</p>
                   <p className="mt-1 font-black text-ink">{formatCurrency(selectedOrder.delivery_fee)}</p>
                 </div>
               </div>
-              <div className="grid gap-2 border-t border-emerald-100 bg-leaf-50 p-4 md:grid-cols-2">
-                <button type="button" onClick={() => downloadInvoice(selectedOrder)} className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-3 py-3 font-bold text-white hover:bg-leaf-700">
+              <div className="grid gap-2 border-t border-leaf-100 bg-leaf-50 p-4 md:grid-cols-2">
+                <Button type="button" variant="dark" shape="pill" onClick={() => downloadInvoice(selectedOrder)}>
                   <FileText className="h-4 w-4" />
                   Open professional invoice
-                </button>
-                <a href={buildWhatsAppOrderUrl(selectedOrder)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-3 py-3 font-bold text-white hover:bg-leaf-700">
+                </Button>
+                <a href={buildWhatsAppOrderUrl(selectedOrder)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-leaf-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-leaf-700 active:scale-[0.98]">
                   <MessageCircle className="h-4 w-4" />
                   WhatsApp customer
                 </a>
               </div>
-              <div className="border-t border-emerald-100 p-4">
+              <div className="border-t border-leaf-100 p-4">
                 <p className="text-sm font-black text-ink">Cancellation and refund actions</p>
-                <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="mt-3 w-full rounded-md border border-black/10 bg-white px-3 py-2" placeholder="Cancellation/refund reason" />
+                <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="mt-3 w-full rounded-2xl border border-zinc-200 bg-white px-3 py-2" placeholder="Cancellation/refund reason" />
                 <div className="mt-3 grid gap-2 md:grid-cols-3">
-                  <button
+                  <Button
                     type="button"
+                    variant="danger"
+                    shape="pill"
                     onClick={() => {
                       updateOrderStatus(selectedOrder.order_id, "Cancelled");
                       updateRefundStatus(selectedOrder.order_id, "Requested", cancelReason);
@@ -968,39 +941,40 @@ export default function AdminPage() {
                       notifyCustomerOrderUpdate(nextOrder, "status", { status: "Cancelled" });
                       notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Requested", reason: cancelReason });
                     }}
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-red-700 px-3 py-2 font-bold text-white hover:bg-red-800"
                   >
                     <XCircle className="h-4 w-4" />
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
+                    shape="pill"
                     onClick={() => {
                       updateRefundStatus(selectedOrder.order_id, "Approved", cancelReason);
                       const nextOrder = { ...selectedOrder, refund_status: "Approved" as const, cancellation_reason: cancelReason };
                       setSelectedOrder(nextOrder);
                       notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Approved", reason: cancelReason });
                     }}
-                    className="rounded-md border border-black/10 bg-white px-3 py-2 font-bold hover:bg-primary-accent/10"
                   >
                     Approve refund
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="dark"
+                    shape="pill"
                     onClick={() => {
                       updateRefundStatus(selectedOrder.order_id, "Refunded", cancelReason);
                       const nextOrder = { ...selectedOrder, status: "Refunded" as const, refund_status: "Refunded" as const, cancellation_reason: cancelReason };
                       setSelectedOrder(nextOrder);
                       notifyCustomerOrderUpdate(nextOrder, "refund", { refundStatus: "Refunded", reason: cancelReason });
                     }}
-                    className="rounded-md bg-ink px-3 py-2 font-bold text-white hover:bg-leaf-700"
                   >
                     Mark refunded
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
-          </section>
+          </motion.section>
         </div>
       ) : null}
     </main>
@@ -1009,28 +983,28 @@ export default function AdminPage() {
 
 function Metric({ icon, title, value }: { icon: ReactNode; title: string; value: string }) {
   return (
-    <div className="rounded-lg border border-emerald-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
+    <motion.div {...cardMotion} className="premium-card rounded-2xl p-5 transition hover:-translate-y-0.5 hover:shadow-soft">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-bold text-ink/65">{title}</p>
-        <span className="rounded-md bg-leaf-50 p-2 text-primary-accent">{icon}</span>
+        <span className="rounded-full bg-leaf-50 p-2 text-primary-accent">{icon}</span>
       </div>
       <p className="mt-4 text-3xl font-black text-ink">{value}</p>
       <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
         <div className="h-full w-2/3 rounded-full bg-leaf-600" />
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function ChartPanel({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <motion.div {...cardMotion} className="premium-card rounded-2xl p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-black text-ink">{title}</h2>
         <span className="rounded-full bg-leaf-50 px-2 py-1 text-xs font-black text-primary-accent">Live</span>
       </div>
       <div className="mt-4">{children}</div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1038,14 +1012,14 @@ function AdminInput({ label, onChange, type = "text", value }: { label: string; 
   return (
     <label className="block">
       <span className="text-sm font-bold">{label}</span>
-      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-md border border-black/10 px-3 py-2" />
+      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-2xl border border-zinc-200 px-3 py-3 shadow-sm outline-none transition-colors focus:border-primary-accent" />
     </label>
   );
 }
 
 function DetailBlock({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <div className="rounded-lg border border-emerald-100 bg-leaf-50 p-4 text-sm">
+    <div className="rounded-2xl border border-leaf-100 bg-leaf-50 p-4 text-sm">
       <h3 className="mb-2 font-black text-ink">{title}</h3>
       <div className="space-y-1 text-ink/75">{children}</div>
     </div>

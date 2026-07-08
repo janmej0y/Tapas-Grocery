@@ -10,6 +10,7 @@ import { useLanguage } from "@/components/language-provider";
 import { ProductCard } from "@/components/storefront/product-card";
 import { SearchBar } from "@/components/storefront/search-bar";
 import { Select, Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
 import { getCategoryCounts, PRODUCTS_PER_PAGE, storeCategories } from "@/lib/catalog";
 import { motion } from "framer-motion";
@@ -132,10 +133,10 @@ export default function HomePage() {
 
   return (
     <main className="app-bg pb-24">
-      <section className="relative min-h-[620px] overflow-hidden border-b border-emerald-900/10 bg-white">
+      <section className="relative min-h-[620px] overflow-hidden border-b border-leaf-900/10 bg-white">
         <div className="absolute inset-0 overflow-hidden">
           <Image src="/images/hatimuri-grocery-hero.png" alt="" fill priority sizes="100vw" className="object-cover object-center brightness-[0.98]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-emerald-950/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-leaf-900/10" />
           <div className="absolute inset-0 soft-grid-bg opacity-35" />
 
           {/* Premium drift blobs */}
@@ -150,7 +151,7 @@ export default function HomePage() {
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="absolute left-1/3 top-10 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl"
+            className="absolute left-1/3 top-10 h-72 w-72 rounded-full bg-leaf-500/10 blur-3xl"
           />
           <motion.div
             animate={{
@@ -175,26 +176,26 @@ export default function HomePage() {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="max-w-2xl"
           >
-            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/85 px-3 py-2 text-xs font-black uppercase text-primary-accent shadow-sm backdrop-blur">
-              <MapPin className="h-4 w-4" />
+            <p className="inline-flex items-center gap-2 rounded-full border border-leaf-200 bg-white/85 px-3 py-2 text-xs font-semibold uppercase text-primary-accent shadow-card backdrop-blur">
+              <MapPin className="h-3.5 w-3.5" />
               Hatimuri's Digital Grocery Store
             </p>
-            <h1 className="mt-4 text-4xl font-black leading-[1.02] tracking-normal text-[#111827] sm:text-6xl">
+            <h1 className="mt-4 text-4xl font-black leading-[1.02] tracking-normal text-heading sm:text-6xl">
               Fresh Groceries Delivered Across Hatimuri
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-ink/70 sm:text-lg">
               Order daily essentials from your trusted local store with fast delivery, transparent pricing, and cash on delivery.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <a href="#product-tools" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#15803d] px-5 py-3 text-sm font-black text-white shadow-soft transition hover:bg-emerald-800 active:scale-[0.98]">
+              <a href="#product-tools" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-accent px-5 py-3 text-sm font-bold text-white shadow-soft transition hover:bg-leaf-800 active:scale-[0.98]">
                 <ShoppingBag className="h-4 w-4" />
                 Start shopping
               </a>
-              <Link href="/more" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-5 py-3 text-sm font-black text-ink shadow-sm backdrop-blur transition hover:bg-emerald-50 active:scale-[0.98]">
+              <Link href="/more" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-5 py-3 text-sm font-semibold text-ink shadow-card backdrop-blur transition hover:bg-slate-50 active:scale-[0.98]">
                 <Smartphone className="h-4 w-4" />
                 Install App
               </Link>
-              <a href="/downloads/tapas-grocery.apk" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-5 py-3 text-sm font-black text-ink shadow-sm backdrop-blur transition hover:bg-emerald-50 active:scale-[0.98]">
+              <a href="/downloads/tapas-grocery.apk" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-5 py-3 text-sm font-semibold text-ink shadow-card backdrop-blur transition hover:bg-slate-50 active:scale-[0.98]">
                 <Download className="h-4 w-4" />
                 Download APK
               </a>
@@ -209,8 +210,8 @@ export default function HomePage() {
               ].map((item) => {
                 const Icon = item.icon;
                 return (
-                  <span key={item.label} className="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/82 px-3 py-2 text-xs font-black text-ink shadow-sm backdrop-blur">
-                    <Icon className="h-4 w-4 text-primary-accent" />
+                  <span key={item.label} className="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/82 px-3 py-2 text-xs font-semibold text-ink shadow-card backdrop-blur">
+                    <Icon className="h-3.5 w-3.5 text-ink/70" />
                     {item.label}
                   </span>
                 );
@@ -228,21 +229,17 @@ export default function HomePage() {
           <div className="glass-panel rounded-2xl p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-black uppercase text-primary-accent">Tapas Grocery Store</p>
-                <h2 className="truncate text-xl font-black text-ink">Search, filter, add</h2>
+                <p className="text-xs font-semibold uppercase text-primary-accent">Tapas Grocery Store</p>
+                <h2 className="truncate text-xl font-bold text-ink">Search, filter, add</h2>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {activeFilterCount > 0 ? (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-sm font-black text-ink hover:bg-emerald-50"
-                  >
-                    <FilterX className="h-4 w-4 text-primary-accent" />
+                  <Button type="button" variant="outline" shape="pill" onClick={clearFilters} className="h-10 px-3">
+                    <FilterX className="h-4 w-4 text-ink/70" />
                     Clear
-                  </button>
+                  </Button>
                 ) : null}
-                <span className="hidden rounded-full bg-emerald-50 px-3 py-2 text-sm font-black text-primary-accent sm:inline-flex">
+                <span className="hidden rounded-full bg-leaf-50 px-3 py-2 text-sm font-semibold text-primary-accent sm:inline-flex">
                   {filteredProducts.length} items
                 </span>
               </div>
@@ -259,8 +256,8 @@ export default function HomePage() {
                   <Link
                     key={category.slug}
                     href={category.slug === "all" ? "/#product-tools" : `/category/${category.slug}`}
-                    className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-black shadow-sm transition active:scale-[0.98] ${
-                      category.slug === "all" ? "border-primary-accent bg-primary-accent text-white" : "border-slate-200 bg-white text-ink hover:bg-emerald-50"
+                    className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold shadow-card transition active:scale-[0.98] ${
+                      category.slug === "all" ? "border-primary-accent bg-primary-accent text-white" : "border-zinc-200 bg-white text-ink hover:bg-slate-50"
                     }`}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
@@ -271,8 +268,8 @@ export default function HomePage() {
             </div>
 
             <details className="mt-3 rounded-2xl border border-slate-100 bg-white/70 px-3 py-2">
-              <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-black text-ink">
-                <Search className="h-4 w-4 text-primary-accent" />
+              <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink">
+                <Search className="h-4 w-4 text-ink/70" />
                 More filters {activeFilterCount > 0 ? `(${activeFilterCount} active)` : ""}
               </summary>
               <div className="mt-3 grid gap-3 md:grid-cols-5">
@@ -294,20 +291,20 @@ export default function HomePage() {
         <div className="mt-5">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-sm font-black uppercase text-primary-accent">Shop by aisle</p>
-              <h2 className="text-2xl font-black text-ink">Find daily essentials faster</h2>
+              <p className="text-sm font-semibold uppercase text-primary-accent">Shop by aisle</p>
+              <h2 className="text-2xl font-bold text-ink">Find daily essentials faster</h2>
             </div>
-            <p className="hidden text-sm font-bold text-ink/55 sm:block">{products.length} total products</p>
+            <p className="hidden text-sm font-medium text-ink/55 sm:block">{products.length} total products</p>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {categoryCounts.map((item) => (
               <Link
                 key={item.slug}
                 href={item.slug === "all" ? "/#product-tools" : `/category/${item.slug}`}
-                className="premium-card min-h-[88px] rounded-2xl p-4 text-left text-ink transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 active:scale-[0.98]"
+                className="interactive-card premium-card min-h-[88px] rounded-2xl p-4 text-left text-ink"
               >
-                <span className="line-clamp-2 text-sm font-black leading-5">{item.label}</span>
-                <span className="mt-1 block text-xs font-bold text-ink/50">
+                <span className="line-clamp-2 text-sm font-semibold leading-5">{item.label}</span>
+                <span className="mt-1 block text-xs font-medium text-ink/50">
                   {item.count} items
                 </span>
               </Link>
@@ -317,10 +314,10 @@ export default function HomePage() {
 
         <div className="mt-4 flex items-end justify-between gap-3">
           <div>
-            <p className="text-sm font-black uppercase text-primary-accent">Available now</p>
-            <h2 className="text-2xl font-black text-ink">{activeFilter === "all" ? "All groceries" : activeFilter}</h2>
+            <p className="text-sm font-semibold uppercase text-primary-accent">Available now</p>
+            <h2 className="text-2xl font-bold text-ink">{activeFilter === "all" ? "All groceries" : activeFilter}</h2>
           </div>
-          <p className="text-right text-sm font-bold text-ink/55">
+          <p className="text-right text-sm font-medium text-ink/55">
             {filteredProducts.length} products
             <span className="block text-xs text-ink/45">Page {currentPage} of {totalPages}</span>
             {activeFilterCount > 0 ? <span className="block text-xs text-primary-accent">{activeFilterCount} filter{activeFilterCount === 1 ? "" : "s"} active</span> : null}
@@ -341,20 +338,16 @@ export default function HomePage() {
                 <ProductCard key={product.id} product={product} />
               )) : (
                 <div className="premium-card col-span-full rounded-2xl p-8 text-center">
-                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-primary-accent">
+                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-leaf-50 text-primary-accent">
                     <Search className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-3 text-xl font-black text-ink">No matching products</h3>
-                  <p className="mx-auto mt-1 max-w-md text-sm font-semibold text-ink/60">
+                  <h3 className="mt-3 text-xl font-bold text-ink">No matching products</h3>
+                  <p className="mx-auto mt-1 max-w-md text-sm font-medium text-ink/60">
                     Try removing a filter, checking spelling, or browsing another aisle.
                   </p>
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="mt-4 inline-flex items-center justify-center rounded-full bg-primary-accent px-4 py-3 text-sm font-black text-white hover:bg-emerald-800"
-                  >
+                  <Button type="button" shape="pill" onClick={clearFilters} className="mt-4 px-4 py-3">
                     Show all products
-                  </button>
+                  </Button>
                 </div>
               )}
         </div>
@@ -382,38 +375,27 @@ function PaginationControls({ currentPage, onPageChange, totalPages }: { current
 
   return (
     <nav className="mt-6 flex flex-wrap items-center justify-center gap-2" aria-label="Product pagination">
-      <button
-        type="button"
-        onClick={() => goToPage(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="h-11 rounded-md border border-slate-200 bg-white px-4 text-sm font-black text-ink disabled:cursor-not-allowed disabled:opacity-40"
-      >
+      <Button type="button" variant="outline" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="h-11 px-4 disabled:opacity-40">
         Previous
-      </button>
+      </Button>
       {Array.from({ length: totalPages }).slice(0, 7).map((_, index) => {
         const page = index + 1;
         return (
-          <button
+          <Button
             key={page}
             type="button"
+            variant={page === currentPage ? "primary" : "outline"}
             onClick={() => goToPage(page)}
-            className={`h-11 min-w-11 rounded-md border px-3 text-sm font-black ${
-              page === currentPage ? "border-primary-accent bg-primary-accent text-white" : "border-slate-200 bg-white text-ink"
-            }`}
+            className="h-11 min-w-11 px-3"
           >
             {page}
-          </button>
+          </Button>
         );
       })}
-      {totalPages > 7 ? <span className="px-2 text-sm font-black text-ink/45">...</span> : null}
-      <button
-        type="button"
-        onClick={() => goToPage(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="h-11 rounded-md border border-slate-200 bg-white px-4 text-sm font-black text-ink disabled:cursor-not-allowed disabled:opacity-40"
-      >
+      {totalPages > 7 ? <span className="px-2 text-sm font-medium text-ink/45">...</span> : null}
+      <Button type="button" variant="outline" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="h-11 px-4 disabled:opacity-40">
         Next
-      </button>
+      </Button>
     </nav>
   );
 }

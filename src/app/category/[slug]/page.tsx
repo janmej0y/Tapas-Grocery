@@ -51,7 +51,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     <main className="app-bg pb-24 min-h-screen">
       <section className="relative overflow-hidden border-b border-slate-200/80 bg-white/70 backdrop-blur-md">
         {/* Subtle decorative blob */}
-        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-500/5 blur-2xl pointer-events-none" />
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-leaf-500/5 blur-2xl pointer-events-none" />
         <div className="absolute left-1/3 bottom-0 h-32 w-32 rounded-full bg-amber-500/5 blur-2xl pointer-events-none" />
         <div className="absolute inset-0 soft-grid-bg opacity-[0.25] pointer-events-none" />
 
@@ -61,7 +61,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Link href="/#categories" className="inline-flex items-center gap-2 text-sm font-black text-[#15803d] hover:text-emerald-800 transition-colors group">
+            <Link href="/#categories" className="inline-flex items-center gap-2 text-sm font-semibold text-primary-accent hover:text-leaf-800 transition-colors group">
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
               Back to all products
             </Link>
@@ -74,12 +74,12 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               transition={{ duration: 0.4, delay: 0.05 }}
             >
               <div className="flex items-center gap-2">
-                <span className="inline-block h-2 w-2 rounded-full bg-[#15803d]" />
-                <p className="text-xs font-black uppercase tracking-wider text-[#15803d]">Category</p>
+                <span className="inline-block h-2 w-2 rounded-full bg-slate-400" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Category</p>
               </div>
-              <h1 className="mt-1 text-3xl font-black tracking-tight text-[#111827] sm:text-4xl">{categoryLabel}</h1>
-              <p className="mt-1.5 text-sm font-semibold text-slate-500">
-                <span className="font-extrabold text-[#15803d]">{filteredProducts.length}</span> products available
+              <h1 className="mt-1 text-3xl font-bold tracking-tight text-heading sm:text-4xl">{categoryLabel}</h1>
+              <p className="mt-1.5 text-sm font-medium text-slate-500">
+                <span className="font-bold text-primary-accent">{filteredProducts.length}</span> products available
               </p>
             </motion.div>
 
@@ -89,7 +89,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               transition={{ duration: 0.4, delay: 0.1 }}
               className="w-full sm:max-w-56"
             >
-              <Select aria-label="Sort products" value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-full shadow-sm bg-white border-slate-200/80 text-sm font-black focus:border-[#15803d] focus:ring-emerald-100">
+              <Select aria-label="Sort products" value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-full shadow-card bg-white border-slate-200/80 text-sm font-semibold focus:border-primary-accent">
                 <option value="popular">Popular first</option>
                 <option value="price-low">Price: low to high</option>
                 <option value="price-high">Price: high to low</option>
@@ -109,10 +109,10 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 <Link
                   key={category.slug}
                   href={category.slug === "all" ? "/" : `/category/${category.slug}`}
-                  className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-black shadow-sm transition-all duration-200 active:scale-95 ${
-                    isActive 
-                      ? "border-[#15803d] bg-[#15803d] text-white shadow-md shadow-emerald-700/10" 
-                      : "border-slate-200 bg-white text-slate-700 hover:text-[#15803d] hover:border-emerald-200 hover:bg-emerald-50/30"
+                  className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold shadow-card transition-all duration-200 ease-out active:scale-95 ${
+                    isActive
+                      ? "border-primary-accent bg-primary-accent text-white shadow-elevated"
+                      : "border-slate-200 bg-white text-slate-700 hover:text-primary-accent hover:border-leaf-200 hover:bg-leaf-50/30"
                   }`}
                 >
                   <Tags className={`h-4 w-4 ${isActive ? "text-white" : "text-slate-400"}`} />
@@ -141,12 +141,12 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
           className="flex items-end justify-between gap-3 border-b border-slate-100 pb-4"
         >
           <div>
-            <p className="text-xs font-black uppercase tracking-wider text-slate-400">Showing now</p>
-            <h2 className="text-xl font-black text-[#111827] mt-0.5">{categoryLabel} Selection</h2>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Showing now</p>
+            <h2 className="text-xl font-bold text-heading mt-0.5">{categoryLabel} Selection</h2>
           </div>
-          <p className="text-right text-xs font-bold text-slate-400">
-            Page <span className="font-extrabold text-slate-600">{currentPage}</span> of <span className="font-extrabold text-slate-600">{totalPages}</span>
-            <span className="block text-[10px] uppercase font-black tracking-wider text-slate-400/80 mt-0.5">{filteredProducts.length} items total</span>
+          <p className="text-right text-xs font-medium text-slate-400">
+            Page <span className="font-semibold text-slate-600">{currentPage}</span> of <span className="font-semibold text-slate-600">{totalPages}</span>
+            <span className="block text-[10px] uppercase font-semibold tracking-wider text-slate-400/80 mt-0.5">{filteredProducts.length} items total</span>
           </p>
         </motion.div>
 
@@ -173,11 +173,11 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 animate={{ opacity: 1, y: 0 }}
                 className="glass-panel col-span-full rounded-2xl p-12 text-center"
               >
-                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-[#15803d]">
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-slate-100 text-slate-500">
                   <Search className="h-6 w-6" />
                 </div>
-                <h3 className="mt-4 text-xl font-black text-[#111827]">No products found</h3>
-                <p className="mt-2 text-sm font-semibold text-slate-500 max-w-sm mx-auto">We couldn't find any products in "{categoryLabel}" matching your search. Try another search term!</p>
+                <h3 className="mt-4 text-xl font-bold text-heading">No products found</h3>
+                <p className="mt-2 text-sm font-medium text-slate-500 max-w-sm mx-auto">We couldn't find any products in "{categoryLabel}" matching your search. Try another search term!</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -207,37 +207,37 @@ function CategoryPagination({ currentPage, onPageChange, totalPages }: { current
 
   return (
     <nav className="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="Category pagination">
-      <button 
-        type="button" 
-        onClick={() => goToPage(currentPage - 1)} 
-        disabled={currentPage === 1} 
-        className="h-11 rounded-full border border-slate-200 bg-white px-5 text-sm font-black text-[#111827] shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+      <button
+        type="button"
+        onClick={() => goToPage(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="h-11 rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-heading shadow-card transition-all duration-200 ease-out hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
       >
         Previous
       </button>
       {Array.from({ length: totalPages }).slice(0, 7).map((_, index) => {
         const page = index + 1;
         return (
-          <button 
-            key={page} 
-            type="button" 
-            onClick={() => goToPage(page)} 
-            className={`h-11 min-w-11 rounded-full border px-4 text-sm font-black transition-all duration-150 active:scale-95 ${
-              page === currentPage 
-                ? "border-[#15803d] bg-[#15803d] text-white shadow-sm shadow-emerald-700/10" 
-                : "border-slate-200 bg-white text-[#111827] hover:bg-slate-50"
+          <button
+            key={page}
+            type="button"
+            onClick={() => goToPage(page)}
+            className={`h-11 min-w-11 rounded-full border px-4 text-sm font-semibold transition-all duration-200 ease-out active:scale-95 ${
+              page === currentPage
+                ? "border-primary-accent bg-primary-accent text-white shadow-card"
+                : "border-slate-200 bg-white text-heading hover:bg-slate-50"
             }`}
           >
             {page}
           </button>
         );
       })}
-      {totalPages > 7 ? <span className="px-2 text-sm font-black text-slate-400">...</span> : null}
-      <button 
-        type="button" 
-        onClick={() => goToPage(currentPage + 1)} 
-        disabled={currentPage === totalPages} 
-        className="h-11 rounded-full border border-slate-200 bg-white px-5 text-sm font-black text-[#111827] shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+      {totalPages > 7 ? <span className="px-2 text-sm font-semibold text-slate-400">...</span> : null}
+      <button
+        type="button"
+        onClick={() => goToPage(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="h-11 rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-heading shadow-card transition-all duration-200 ease-out hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
       >
         Next
       </button>

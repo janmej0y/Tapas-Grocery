@@ -17,7 +17,7 @@ export function LanguageToggle({ compact = false }: { compact?: boolean }) {
           onClick={() => setLanguage(item)}
           className={cn(
             "rounded px-3 py-1.5 text-sm font-black transition-all duration-150 active:scale-[0.98]",
-            language === item ? "bg-primary-accent text-white" : "text-heading hover:bg-emerald-50/50"
+            language === item ? "bg-primary-accent text-white" : "text-heading hover:bg-leaf-50/50"
           )}
           aria-pressed={language === item}
         >

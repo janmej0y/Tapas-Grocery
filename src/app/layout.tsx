@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { AppProviders } from "@/components/app-providers";
 import { Navbar } from "@/components/navbar";
 import { PwaRegister } from "@/components/pwa-register";
-import { ShopperAuthGuard } from "@/components/auth-guard";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,7 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AppProviders>
           <PwaRegister />
           <Navbar />
-          <ShopperAuthGuard>{children}</ShopperAuthGuard>
+          {children}
         </AppProviders>
       </body>
     </html>

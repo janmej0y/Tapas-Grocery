@@ -139,11 +139,11 @@ export function PwaRegister() {
               <p className="font-black text-heading">Update available</p>
               <p className="mt-1 text-sm text-slate-500">A fresh version of Tapas Grocery Store is ready.</p>
             </div>
-            <button type="button" onClick={() => setShowUpdatePrompt(false)} className="rounded-md p-1 hover:bg-emerald-50/50" aria-label="Dismiss update">
+            <button type="button" onClick={() => setShowUpdatePrompt(false)} className="rounded-md p-1 hover:bg-leaf-50/50" aria-label="Dismiss update">
               <X className="h-4 w-4" />
             </button>
           </div>
-          <button type="button" onClick={updateApp} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary-accent px-4 py-3 font-bold text-white hover:bg-emerald-800 transition">
+          <button type="button" onClick={updateApp} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary-accent px-4 py-3 font-bold text-white hover:bg-leaf-800 transition">
             <RefreshCw className="h-4 w-4" />
             Update app
           </button>
@@ -157,15 +157,15 @@ export function PwaRegister() {
               <p className="font-black text-heading">Install Tapas Store</p>
               <p className="mt-1 text-sm text-slate-500">Add the store to your phone for faster ordering, or continue in the browser.</p>
             </div>
-            <button type="button" onClick={continueInBrowser} className="rounded-md p-1 hover:bg-emerald-50/50" aria-label="Continue in browser">
+            <button type="button" onClick={continueInBrowser} className="rounded-md p-1 hover:bg-leaf-50/50" aria-label="Continue in browser">
               <X className="h-4 w-4" />
             </button>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button type="button" onClick={continueInBrowser} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-heading hover:bg-emerald-50/50 transition">
+            <button type="button" onClick={continueInBrowser} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-heading hover:bg-leaf-50/50 transition">
               Browser
             </button>
-            <button type="button" onClick={installApp} className="inline-flex items-center justify-center gap-2 rounded-md bg-primary-accent px-3 py-2 text-sm font-bold text-white hover:bg-emerald-800 transition">
+            <button type="button" onClick={installApp} className="inline-flex items-center justify-center gap-2 rounded-md bg-primary-accent px-3 py-2 text-sm font-bold text-white hover:bg-leaf-800 transition">
               <Download className="h-4 w-4" />
               Install
             </button>

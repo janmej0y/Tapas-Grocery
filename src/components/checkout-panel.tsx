@@ -16,6 +16,7 @@ import {
   Home,
   Info,
   LocateFixed,
+  Loader2,
   Lock,
   MapPin,
   Minus,
@@ -91,7 +92,9 @@ export function CheckoutPanel() {
   } = useStore();
   const router = useRouter();
   const [showRecruiterModal, setShowRecruiterModal] = useState(false);
-  const [isRecruiterDemo, setIsRecruiterDemo] = useState(false);
+  const [isRecruiterDemo, setIsRecruiterDemo] = useState(
+    () => typeof window !== "undefined" && sessionStorage.getItem("recruiter-demo") === "true"
+  );
   const [selectedAddressId, setSelectedAddressId] = useState(customer.addresses[0]?.id ?? "manual");
   const [address, setAddress] = useState<UserAddress>(customer.addresses[0] ?? emptyAddress);
 
@@ -345,6 +348,11 @@ export function CheckoutPanel() {
   }
 
   function saveAddressForNextOrder() {
+    if (isRecruiterDemo || user?.email === "recruiter@example.com") {
+      setShowRecruiterModal(true);
+      return;
+    }
+
     const addressToSave = {
       ...address,
       id: address.id === "addr-manual" || address.id === "manual" ? `addr-${Date.now()}` : address.id
@@ -362,7 +370,7 @@ export function CheckoutPanel() {
     <section id="cart" className="scroll-mt-24 bg-[#F7F8FA] pb-32 pt-8 md:pb-12 md:pt-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div {...cardMotion} className="mb-8">
-          <h1 className="text-3xl font-black tracking-normal text-ink sm:text-4xl">My Cart</h1>
+          <h1 className="text-3xl font-bold tracking-normal text-ink sm:text-4xl">My Cart</h1>
           <p className="mt-2 text-sm font-semibold text-slate-500">Review your items and proceed to checkout.</p>
           <CheckoutProgress cartReady={cart.length > 0} addressReady={isAddressComplete} paymentReady={canOrder} />
         </motion.div>
@@ -372,7 +380,7 @@ export function CheckoutPanel() {
             <section aria-labelledby="cart-items-heading">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h2 id="cart-items-heading" className="text-lg font-black text-ink">
+                  <h2 id="cart-items-heading" className="text-lg font-semibold text-ink">
                     Items in your cart ({cart.length})
                   </h2>
                   <p className="mt-1 text-sm font-medium text-slate-500">Fresh picks packed for your doorstep.</p>
@@ -395,7 +403,7 @@ export function CheckoutPanel() {
 
               {cart.length === 0 ? (
                 <motion.div {...cardMotion} className="space-y-6">
-                  <div className="rounded-2xl border border-[#ECECEC] bg-white p-8 text-center shadow-sm flex flex-col items-center">
+                  <div className="rounded-2xl bg-white p-8 text-center shadow-card flex flex-col items-center">
                     <div className="relative h-48 w-48 mb-4">
                       <Image
                         src="/images/empty-cart.png"
@@ -404,13 +412,13 @@ export function CheckoutPanel() {
                         className="object-contain"
                       />
                     </div>
-                    <h3 className="text-xl font-black text-ink">{t("emptyCart")}</h3>
-                    <p className="mt-2 max-w-sm text-sm font-semibold text-slate-500">
+                    <h3 className="text-xl font-semibold text-ink">{t("emptyCart")}</h3>
+                    <p className="mt-2 max-w-sm text-sm font-medium text-slate-500">
                       Your cart is empty. Add groceries from the store to start your order.
                     </p>
                     <Link
                       href="/#categories"
-                      className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#15803d] px-5 py-3 text-sm font-black text-white shadow-soft transition hover:bg-emerald-800 active:scale-[0.98]"
+                      className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary-accent px-5 py-3 text-sm font-bold text-white shadow-card transition hover:bg-leaf-800 active:scale-[0.98]"
                     >
                       Continue shopping
                       <ChevronRight className="h-4 w-4" />
@@ -418,27 +426,27 @@ export function CheckoutPanel() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-black text-ink">Popular items to add</h3>
-                    <p className="mt-1 text-sm font-semibold text-slate-500">Customers frequently buy these fresh essentials.</p>
+                    <h3 className="text-lg font-semibold text-ink">Popular items to add</h3>
+                    <p className="mt-1 text-sm font-medium text-slate-500">Customers frequently buy these fresh essentials.</p>
                     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {products.slice(0, 4).map((product) => {
                         const unit = product.unitOptions[0] ?? "1";
                         const price = getUnitPrice(product.price, unit, product.variantPrices);
                         return (
-                          <div key={product.id} className="premium-card rounded-2xl p-3 flex flex-col justify-between hover:border-emerald-200 hover:shadow-soft transition-all duration-150">
+                          <div key={product.id} className="premium-card rounded-2xl p-3 flex flex-col justify-between hover:shadow-elevated transition-all duration-150">
                             <div className="relative h-24 w-full bg-slate-50 rounded-xl overflow-hidden mb-2">
                               <Image src={product.image_url} alt={product.name} fill className="object-contain p-2" />
                             </div>
-                            <h4 className="text-xs font-black text-ink line-clamp-2 min-h-8">{productName(product.name)}</h4>
+                            <h4 className="text-xs font-semibold text-ink line-clamp-2 min-h-8">{productName(product.name)}</h4>
                             <div className="mt-2 flex items-center justify-between">
-                              <span className="text-xs font-black text-[#15803d]">{formatCurrency(price)}</span>
+                              <span className="text-xs font-bold text-primary-accent">{formatCurrency(price)}</span>
                               <button
                                 type="button"
                                 onClick={() => {
                                   addToCart(product, unit, 1);
                                   toast.success(`${productName(product.name)} added`);
                                 }}
-                                className="h-7 w-7 rounded-full bg-emerald-50 text-[#15803d] flex items-center justify-center hover:bg-emerald-100 font-bold text-xs"
+                                className="h-7 w-7 rounded-full bg-slate-50 text-ink/70 flex items-center justify-center hover:bg-slate-100 font-semibold text-xs"
                               >
                                 +
                               </button>
@@ -463,22 +471,22 @@ export function CheckoutPanel() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.24, delay: index * 0.035, ease: "easeOut" }}
                         whileHover={{ y: -2 }}
-                        className="grid gap-4 rounded-2xl border border-[#ECECEC] bg-white p-4 shadow-sm sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center"
+                        className="grid gap-4 rounded-2xl bg-white p-4 shadow-card sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center"
                       >
                         <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-slate-50">
                           <Image src={item.product.image_url} alt={item.product.name} fill sizes="96px" className="object-contain p-2" />
                         </div>
 
                         <div className="min-w-0">
-                          <h3 className="truncate text-base font-black text-ink">{formatCartItemName(productName(item.product.name), item.selectedUnit)}</h3>
-                          <p className="mt-1 text-sm font-semibold text-slate-500">{item.selectedUnit}</p>
+                          <h3 className="truncate text-base font-semibold text-ink">{formatCartItemName(productName(item.product.name), item.selectedUnit)}</h3>
+                          <p className="mt-1 text-sm font-medium text-slate-500">{item.selectedUnit}</p>
                           <div className="mt-3 flex flex-wrap items-center gap-2">
                             <Badge variant="fresh">Fresh</Badge>
                             {hasDeal ? <Badge variant="deal">Deal</Badge> : null}
                             <button
                               type="button"
                               onClick={() => toast("Save for later is not available yet.")}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-slate-500 hover:bg-slate-100"
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100"
                             >
                               <Bookmark className="h-3.5 w-3.5" />
                               Save for later
@@ -502,7 +510,7 @@ export function CheckoutPanel() {
                             >
                               <Minus className="h-4 w-4" />
                             </motion.button>
-                            <span className="grid h-10 min-w-10 place-items-center px-2 text-sm font-black text-ink">{item.quantity}</span>
+                            <span className="grid h-10 min-w-10 place-items-center px-2 text-sm font-semibold text-ink">{item.quantity}</span>
                             <motion.button
                               whileTap={{ scale: 0.92 }}
                               type="button"
@@ -514,7 +522,7 @@ export function CheckoutPanel() {
                             </motion.button>
                           </div>
 
-                          <p className="min-w-16 text-right text-lg font-black text-ink">{formatCurrency(lineTotal)}</p>
+                          <p className="min-w-16 text-right text-lg font-bold text-ink">{formatCurrency(lineTotal)}</p>
 
                           <motion.button
                             whileTap={{ scale: 0.94 }}
@@ -541,12 +549,12 @@ export function CheckoutPanel() {
             <section aria-labelledby="recommended-heading">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h2 id="recommended-heading" className="text-lg font-black text-ink">
+                  <h2 id="recommended-heading" className="text-lg font-semibold text-ink">
                     Frequently bought together
                   </h2>
                   <p className="mt-1 text-sm font-medium text-slate-500">Quick add-ons for the same delivery run.</p>
                 </div>
-                <Link href="/#categories" className="rounded-full px-3 py-2 text-sm font-bold text-[#15803d] hover:bg-emerald-50">
+                <Link href="/#categories" className="rounded-full px-3 py-2 text-sm font-semibold text-primary-accent hover:bg-slate-50">
                   See more
                 </Link>
               </div>
@@ -561,15 +569,15 @@ export function CheckoutPanel() {
                         <motion.article
                           key={product.id}
                           whileHover={{ y: -3 }}
-                          className="w-[178px] shrink-0 rounded-2xl border border-[#ECECEC] bg-white p-3 shadow-sm sm:basis-[calc((100%-36px)/4)]"
+                          className="w-[178px] shrink-0 rounded-2xl bg-white p-3 shadow-card sm:basis-[calc((100%-36px)/4)]"
                         >
-                          <div className="relative h-20 overflow-hidden rounded-xl bg-slate-50">
-                            <Image src={product.image_url} alt={product.name} fill sizes="180px" className="object-contain p-2" />
+                          <div className="relative h-24 w-24 mx-auto overflow-hidden rounded-xl bg-slate-50">
+                            <Image src={product.image_url} alt={product.name} fill sizes="96px" className="object-contain p-2" />
                           </div>
-                          <h3 className="mt-3 line-clamp-2 min-h-10 text-sm font-black leading-5 text-ink">{productName(product.name)}</h3>
-                          <p className="mt-1 text-xs font-semibold text-slate-500">{unit}</p>
+                          <h3 className="mt-3 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-ink">{productName(product.name)}</h3>
+                          <p className="mt-1 text-xs font-medium text-slate-500">{unit}</p>
                           <div className="mt-3 flex items-center justify-between gap-2">
-                            <span className="text-sm font-black text-[#15803d]">{formatCurrency(price)}</span>
+                            <span className="text-sm font-bold text-primary-accent">{formatCurrency(price)}</span>
                             <motion.button
                               whileTap={{ scale: 0.92 }}
                               type="button"
@@ -577,7 +585,7 @@ export function CheckoutPanel() {
                                 addToCart(product, unit, 1);
                                 toast.success(`${productName(product.name)} added to cart`);
                               }}
-                              className="grid h-9 w-9 place-items-center rounded-full border border-emerald-100 bg-emerald-50 text-[#15803d] hover:bg-emerald-100"
+                              className="grid h-9 w-9 place-items-center rounded-full bg-primary-accent text-white hover:bg-leaf-800"
                               aria-label={`Add ${productName(product.name)} to cart`}
                             >
                               <Plus className="h-4 w-4" />
@@ -587,7 +595,7 @@ export function CheckoutPanel() {
                       );
                     })
                   ) : (
-                    <div className="rounded-2xl border border-[#ECECEC] bg-white p-5 text-sm font-semibold text-slate-500 shadow-sm">
+                    <div className="rounded-2xl bg-white p-5 text-sm font-medium text-slate-500 shadow-card">
                       Recommendations will appear after more products are available.
                     </div>
                   )}
@@ -597,35 +605,35 @@ export function CheckoutPanel() {
           </div>
 
           <aside className="space-y-5 self-start md:contents">
-            <motion.section {...cardMotion} className="rounded-2xl border border-[#ECECEC] bg-white p-4 shadow-sm sm:p-5 md:sticky md:top-24 md:col-start-1 md:row-start-1 md:self-start">
+            <motion.section {...cardMotion} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-card sm:p-5 md:sticky md:top-24 md:col-start-1 md:row-start-1 md:self-start">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-black text-ink">Delivery Details</h2>
+                  <h2 className="text-lg font-semibold text-ink">Delivery Details</h2>
                   <p className="mt-1 text-sm font-medium text-slate-500">Address, map and receiver info.</p>
                 </div>
-                <div className="grid h-11 w-11 place-items-center rounded-full bg-emerald-50 text-[#15803d]">
+                <div className="grid h-11 w-11 place-items-center rounded-full bg-slate-50 text-ink/70">
                   <Truck className="h-5 w-5" />
                 </div>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-[#ECECEC] bg-[#F7F8FA] p-3">
+              <div className="mt-5 rounded-2xl border border-zinc-200 bg-[#F7F8FA] p-3">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#15803d] text-white shadow-sm">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-accent text-white shadow-card">
                     <Home className="h-5 w-5" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-black text-ink">{address.label}</p>
+                      <p className="text-sm font-semibold text-ink">{address.label}</p>
                       {(address.id !== "addr-manual" && address.id !== "manual") ? (
                         <SavedChip label="Saved Address" />
                       ) : null}
                     </div>
-                    <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-slate-500">{addressSummary}</p>
+                    <p className="mt-1 line-clamp-2 text-sm font-medium leading-5 text-slate-500">{addressSummary}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsAddressPickerOpen((current) => !current)}
-                    className="rounded-full px-3 py-1.5 text-xs font-black text-[#15803d] hover:bg-emerald-50"
+                    className="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-accent hover:bg-slate-50"
                   >
                     Change
                   </button>
@@ -640,7 +648,7 @@ export function CheckoutPanel() {
                       const nextAddress = customer.addresses.find((item) => item.id === id) ?? { ...emptyAddress, id: `addr-${Date.now()}`, phone: customer.phone };
                       setAddress(nextAddress);
                     }}
-                    className="mt-3 rounded-xl border-[#ECECEC] bg-white"
+                    className="mt-3 rounded-xl border-zinc-200 bg-white"
                   >
                     {customer.addresses.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -652,11 +660,11 @@ export function CheckoutPanel() {
                 ) : null}
               </div>
 
-              <p className="mt-3 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-bold leading-5 text-[#15803d]">
+              <p className="mt-3 rounded-2xl bg-slate-50 px-3 py-2 text-xs font-medium leading-5 text-ink/70">
                 Saved addresses are remembered on this device and reused automatically next time.
               </p>
 
-              <div className="relative mt-4 overflow-hidden rounded-2xl border border-[#ECECEC] bg-slate-100">
+              <div className="relative mt-4 overflow-hidden rounded-2xl border border-zinc-200 bg-slate-100">
                 <iframe
                   title="Delivery location map"
                   src={googleMapUrl(address.latitude, address.longitude)}
@@ -664,25 +672,25 @@ export function CheckoutPanel() {
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
-                <div className="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white/95 px-3 py-2 text-xs font-black text-[#15803d] shadow-sm backdrop-blur">
-                  <Route className="h-4 w-4" />
+                <div className="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-primary-accent shadow-card backdrop-blur">
+                  <Route className="h-3.5 w-3.5" />
                   {Number.isFinite(address.distanceKm) ? `${address.distanceKm.toFixed(2)} km` : "Add distance"}
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.96 }}
                   type="button"
                   onClick={detectLocation}
-                  className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-xs font-black text-ink shadow-sm backdrop-blur hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-slate-400"
+                  className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-ink shadow-card backdrop-blur hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
                   disabled={isLocating}
                 >
-                  <LocateFixed className="h-4 w-4 text-[#15803d]" />
+                  {isLocating ? <Loader2 className="h-4 w-4 animate-spin text-primary-accent" /> : <LocateFixed className="h-4 w-4 text-primary-accent" />}
                   {isLocating ? "Detecting" : "Use current"}
                 </motion.button>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-slate-500">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-slate-500">
                 <span>Store: {SHOP_LOCATION.latitude}, {SHOP_LOCATION.longitude}</span>
-                <a href={googleMapsExternalUrl(address.latitude, address.longitude)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-bold text-[#15803d] hover:underline">
+                <a href={googleMapsExternalUrl(address.latitude, address.longitude)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary-accent hover:underline">
                   Open map
                   <Navigation className="h-3.5 w-3.5" />
                 </a>
@@ -703,18 +711,19 @@ export function CheckoutPanel() {
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="outline"
+                  shape="pill"
                   onClick={fillCurrentMapAddress}
-                  disabled={isLocating}
-                  className="rounded-full border-[#ECECEC] bg-white hover:bg-emerald-50"
+                  loading={isLocating}
+                  loadingText="Detecting..."
                 >
-                  <MapPin className="h-4 w-4 text-[#15803d]" />
+                  <MapPin className="h-4 w-4 text-ink/70" />
                   Fill from map
                 </Button>
                 <Button
                   type="button"
                   onClick={saveAddressForNextOrder}
-                  className="rounded-full bg-[#15803d] hover:bg-emerald-800"
+                  className="rounded-full bg-primary-accent hover:bg-leaf-800"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   {addressSaveState === "saved" ? "Saved" : "Save address"}
@@ -731,11 +740,11 @@ export function CheckoutPanel() {
               </div>
 
               <label className="mt-3 block">
-                <span className="text-sm font-black text-ink">Delivery instructions / landmark</span>
+                <span className="text-sm font-semibold text-ink">Delivery instructions / landmark</span>
                 <textarea
                   value={address.landmark}
                   onChange={(event) => setAddress((current) => ({ ...current, landmark: event.target.value }))}
-                  className="mt-2 min-h-24 w-full resize-y rounded-2xl border border-[#ECECEC] bg-white px-3 py-3 text-sm font-semibold text-ink shadow-sm outline-none transition-colors focus:border-[#15803d]"
+                  className="mt-2 min-h-24 w-full resize-y rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-sm font-medium text-ink outline-none transition-colors focus:border-primary-accent"
                   placeholder="E.g. Leave at the door, call before delivery..."
                 />
               </label>
@@ -747,26 +756,26 @@ export function CheckoutPanel() {
               </div>
             </motion.section>
 
-            <motion.section {...cardMotion} transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }} className="rounded-2xl border border-[#ECECEC] bg-white p-4 shadow-sm sm:p-5 md:col-start-2 md:row-start-2">
+            <motion.section {...cardMotion} transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-card sm:p-5 md:col-start-2 md:row-start-2">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-black text-ink">Bill Details</h2>
+                  <h2 className="text-lg font-semibold text-ink">Bill Details</h2>
                   <p className="mt-1 text-sm font-medium text-slate-500">{cart.length} items in this order.</p>
                 </div>
-                <button type="button" className="rounded-full px-3 py-1.5 text-xs font-black text-[#15803d] hover:bg-emerald-50">
+                <button type="button" className="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-accent hover:bg-slate-50">
                   View details
                 </button>
               </div>
 
               <div className="mt-5">
-                <span className="text-sm font-black text-ink">{t("promoCode")}</span>
+                <span className="text-sm font-semibold text-ink">{t("promoCode")}</span>
                 <div className="mt-2 flex gap-2">
-                  <Input value={promoCode} onChange={(event) => setPromoCode(event.target.value)} className="min-w-0 flex-1 rounded-full border-[#ECECEC] uppercase shadow-sm" placeholder="TAPAS10" />
+                  <Input value={promoCode} onChange={(event) => setPromoCode(event.target.value)} className="min-w-0 flex-1 rounded-full border-zinc-200 uppercase" placeholder="TAPAS10" />
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     type="button"
                     onClick={applyPromo}
-                    className="rounded-full bg-ink px-4 py-2 text-sm font-black text-white hover:bg-[#15803d]"
+                    className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-primary-accent"
                   >
                     {t("apply")}
                   </motion.button>
@@ -774,8 +783,8 @@ export function CheckoutPanel() {
               </div>
 
               <div className="mt-5">
-                <span className="text-sm font-black text-ink">Payment</span>
-                <p className="mt-2 rounded-2xl bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">{t("codOnlyNotice")}</p>
+                <span className="text-sm font-semibold text-ink">Payment</span>
+                <p className="mt-2 rounded-2xl bg-amber-50 px-3 py-2 text-xs font-medium leading-5 text-amber-800">{t("codOnlyNotice")}</p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {(["UPI", "Card", "NetBanking", "COD"] as PaymentMethod[]).map((method) => (
                     <motion.button
@@ -790,12 +799,12 @@ export function CheckoutPanel() {
                         setPaymentMethod(method);
                       }}
                       className={cn(
-                        "rounded-full border px-3 py-2 text-sm font-black",
+                        "rounded-full border px-3 py-2 text-sm font-semibold",
                         paymentMethod === method
-                          ? "border-[#15803d] bg-[#15803d] text-white"
+                          ? "border-primary-accent bg-primary-accent text-white"
                           : method === "COD"
-                            ? "border-[#ECECEC] bg-white text-ink hover:bg-emerald-50"
-                            : "border-[#ECECEC] bg-slate-100 text-slate-400"
+                            ? "border-zinc-200 bg-white text-ink hover:bg-slate-50"
+                            : "border-zinc-200 bg-slate-100 text-slate-400"
                       )}
                     >
                       {method === "COD" ? t("cashOnDelivery") : method}
@@ -804,28 +813,28 @@ export function CheckoutPanel() {
                 </div>
               </div>
 
-              <dl className="mt-5 space-y-3 text-sm font-semibold text-slate-600">
+              <dl className="mt-5 space-y-3 text-sm font-medium text-slate-600">
                 <SummaryRow label="Cart Value" value={formatCurrency(subtotal)} />
                 <SummaryRow label="Delivery Charge" value={delivery.available ? formatCurrency(delivery.fee) : "N/A"} />
                 <SummaryRow label="Packaging Charge" value={formatCurrency(packagingCharge)} />
-                <SummaryRow label={t("discount")} value={`-${formatCurrency(savings)}`} valueClassName="text-[#15803d]" />
+                <SummaryRow label={t("discount")} value={`-${formatCurrency(savings)}`} valueClassName="text-primary-accent" />
               </dl>
 
               <div className="my-5 h-px border-t border-dashed border-slate-200" />
 
-              <div className="rounded-2xl bg-emerald-50 px-3 py-3 text-sm font-black text-[#15803d]">
+              <div className="rounded-2xl bg-leaf-50 px-3 py-3 text-sm font-semibold text-primary-accent">
                 {savings > 0 ? `You saved ${formatCurrency(savings)} on this order` : "Apply a promo code to unlock savings on this order."}
               </div>
 
               <div className="mt-5 flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-xs font-black uppercase text-slate-400">To pay</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">{delivery.available && isAddressComplete ? delivery.message : "Complete address details to continue."}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-400">To pay</p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">{delivery.available && isAddressComplete ? delivery.message : "Complete address details to continue."}</p>
                 </div>
-                <p className="text-3xl font-black tracking-normal text-[#15803d]">{formatCurrency(grandTotal)}</p>
+                <p className="text-3xl font-black tracking-normal text-primary-accent">{formatCurrency(grandTotal)}</p>
               </div>
 
-              <p className={cn("mt-4 text-sm font-bold", delivery.available && isAddressComplete ? "text-[#15803d]" : "text-red-700")}>
+              <p className={cn("mt-4 text-sm font-semibold", delivery.available && isAddressComplete ? "text-primary-accent" : "text-red-700")}>
                 {!isAddressComplete ? "Full delivery address and valid mobile number are required." : delivery.message}
               </p>
 
@@ -833,26 +842,26 @@ export function CheckoutPanel() {
                 whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={placeOrder}
-                className="mt-5 hidden w-full items-center justify-center gap-2 rounded-full bg-[#15803d] px-4 py-3.5 text-base font-black text-white shadow-sm hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 md:inline-flex"
+                className="mt-5 hidden w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3.5 text-base font-bold text-white shadow-card hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 md:inline-flex"
                 disabled={!canOrder || isSubmitting}
               >
-                <CreditCard className="h-5 w-5" />
+                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CreditCard className="h-5 w-5" />}
                 {primaryActionLabel}
-                <ChevronRight className="h-5 w-5" />
+                {isSubmitting ? null : <ChevronRight className="h-5 w-5" />}
               </motion.button>
 
               {placedOrder ? (
-                <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                  <p className="font-black text-ink">Order confirmed: {placedOrder.order_id}</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-600">Invoice {placedOrder.invoice_number} is ready.</p>
+                <div className="mt-5 rounded-2xl border border-leaf-100 bg-leaf-50 p-4">
+                  <p className="font-semibold text-ink">Order confirmed: {placedOrder.order_id}</p>
+                  <p className="mt-1 text-sm font-medium text-slate-600">Invoice {placedOrder.invoice_number} is ready.</p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    <Button type="button" variant="secondary" onClick={() => downloadInvoice(placedOrder)} className="rounded-full border-emerald-100 bg-white hover:bg-emerald-50">
+                    <Button type="button" variant="secondary" onClick={() => downloadInvoice(placedOrder)} className="rounded-full border-leaf-100 bg-white hover:bg-leaf-50">
                       Download invoice
                     </Button>
-                    <a href={buildWhatsAppOrderUrl(placedOrder)} target="_blank" rel="noreferrer" className="rounded-full bg-[#15803d] px-3 py-2 text-center text-sm font-black text-white hover:bg-emerald-800">
+                    <a href={buildWhatsAppOrderUrl(placedOrder)} target="_blank" rel="noreferrer" className="rounded-full bg-primary-accent px-3 py-2 text-center text-sm font-bold text-white hover:bg-leaf-800">
                       WhatsApp confirmation
                     </a>
-                    <Link href={`/orders/${placedOrder.order_id}`} className="rounded-full bg-ink px-3 py-2 text-center text-sm font-black text-white hover:bg-[#15803d] sm:col-span-2">
+                    <Link href={`/orders/${placedOrder.order_id}`} className="rounded-full bg-ink px-3 py-2 text-center text-sm font-semibold text-white hover:bg-primary-accent sm:col-span-2">
                       Track order
                     </Link>
                     <Button
@@ -860,9 +869,9 @@ export function CheckoutPanel() {
                       variant="secondary"
                       onClick={() => enableCustomerNotifications(placedOrder)}
                       disabled={isEnablingNotifications}
-                      className="rounded-full border-emerald-100 bg-white text-[#15803d] hover:bg-emerald-50 sm:col-span-2"
+                      className="rounded-full border-leaf-100 bg-white text-primary-accent hover:bg-leaf-50 sm:col-span-2"
                     >
-                      <BellRing className="h-4 w-4" />
+                      {isEnablingNotifications ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
                       {isEnablingNotifications ? "Enabling..." : "Enable order updates"}
                     </Button>
                   </div>
@@ -874,19 +883,20 @@ export function CheckoutPanel() {
       </div>
 
       {!placedOrder ? (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#ECECEC] bg-white/95 px-4 py-3 shadow-[0_-18px_40px_rgba(15,23,42,0.10)] backdrop-blur md:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white/95 px-4 py-3 shadow-elevated backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-7xl items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-black uppercase text-slate-400">To pay</p>
-              <p className="truncate text-xl font-black text-[#15803d]">{formatCurrency(grandTotal)}</p>
+              <p className="text-xs font-semibold uppercase text-slate-400">To pay</p>
+              <p className="truncate text-xl font-bold text-primary-accent">{formatCurrency(grandTotal)}</p>
             </div>
             <motion.button
               whileTap={{ scale: 0.96 }}
               type="button"
               onClick={placeOrder}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#15803d] px-4 py-3 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 text-sm font-bold text-white shadow-card disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
               disabled={!canOrder || isSubmitting}
             >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {primaryActionLabel}
               <ChevronRight className="h-4 w-4" />
             </motion.button>
@@ -909,21 +919,21 @@ export function CheckoutPanel() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.93, y: 15 }}
               transition={{ type: "spring", duration: 0.5 }}
-              className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-white p-6 shadow-soft text-center"
+              className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-white p-6 shadow-modal text-center"
             >
               <button
                 onClick={() => setShowRecruiterModal(false)}
                 className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/5 text-slate-500 hover:bg-black/10 transition active:scale-95"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
 
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-500">
                 <Lock className="h-7 w-7 animate-bounce" />
               </div>
 
-              <h2 className="mt-4 text-xl font-black text-ink">Demo Account Access</h2>
-              <p className="mt-2 text-sm font-semibold text-slate-500 leading-relaxed">
+              <h2 className="mt-4 text-xl font-semibold text-ink">Demo Account Access</h2>
+              <p className="mt-2 text-sm font-medium text-slate-500 leading-relaxed">
                 You have the permission to view. You can't order. You have to login with a customer account to order.
               </p>
 
@@ -939,13 +949,13 @@ export function CheckoutPanel() {
                     setShowRecruiterModal(false);
                     router.push("/login");
                   }}
-                  className="w-full rounded-full bg-[#15803d] px-4 py-3 font-bold text-white shadow-sm hover:bg-emerald-800 active:scale-[0.98]"
+                  className="w-full rounded-full bg-primary-accent px-4 py-3 font-bold text-white shadow-card hover:bg-leaf-800 active:scale-[0.98]"
                 >
                   Login with Customer Account
                 </button>
                 <button
                   onClick={() => setShowRecruiterModal(false)}
-                  className="w-full rounded-full border border-slate-200 bg-white px-4 py-3 font-bold text-ink hover:bg-slate-50 active:scale-[0.98]"
+                  className="w-full rounded-full border border-slate-200 bg-white px-4 py-3 font-semibold text-ink hover:bg-slate-50 active:scale-[0.98]"
                 >
                   Continue Viewing
                 </button>
@@ -974,18 +984,18 @@ function CheckoutProgress({ addressReady, cartReady, paymentReady }: { addressRe
             <div className="flex min-w-max items-center gap-3">
               <span
                 className={cn(
-                  "grid h-10 w-10 place-items-center rounded-full border text-sm font-black shadow-sm",
-                  step.ready ? "border-[#15803d] bg-[#15803d] text-white" : "border-slate-200 bg-white text-slate-500"
+                  "grid h-10 w-10 place-items-center rounded-full border text-sm font-semibold shadow-card",
+                  step.ready ? "border-primary-accent bg-primary-accent text-white" : "border-slate-200 bg-white text-slate-500"
                 )}
               >
                 {step.ready ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
               </span>
               <span>
-                <span className={cn("block text-sm font-black", step.ready ? "text-[#15803d]" : "text-ink")}>{step.title}</span>
-                <span className="block text-xs font-semibold text-slate-500">{step.text}</span>
+                <span className={cn("block text-sm font-semibold", step.ready ? "text-primary-accent" : "text-ink")}>{step.title}</span>
+                <span className="block text-xs font-medium text-slate-500">{step.text}</span>
               </span>
             </div>
-            {index < steps.length - 1 ? <span className={cn("h-px min-w-14 flex-1", steps[index + 1].ready ? "bg-[#15803d]" : "bg-slate-200")} /> : null}
+            {index < steps.length - 1 ? <span className={cn("h-px min-w-14 flex-1", steps[index + 1].ready ? "bg-primary-accent" : "bg-slate-200")} /> : null}
           </div>
         );
       })}
@@ -1010,13 +1020,13 @@ function AddressInput({
 }) {
   return (
     <label className={cn("block", className)}>
-      <span className="text-sm font-black text-ink">{label}</span>
+      <span className="text-sm font-semibold text-ink">{label}</span>
       <Input
         inputMode={inputMode}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="mt-2 rounded-2xl border-[#ECECEC] bg-white px-3 py-3 text-sm font-semibold shadow-sm focus:border-[#15803d]"
+        className="mt-2 rounded-2xl border-zinc-200 bg-white px-3 py-3 text-sm font-medium focus:border-primary-accent"
       />
     </label>
   );
@@ -1026,8 +1036,8 @@ function AddressInput({
 
 function ServiceChip({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <div className="inline-flex items-center justify-center gap-2 rounded-full border border-[#ECECEC] bg-white px-3 py-2 text-xs font-black text-ink shadow-sm">
-      <span className="text-[#15803d]">{icon}</span>
+    <div className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-ink shadow-card">
+      <span className="text-ink/70">{icon}</span>
       <span className="truncate">{label}</span>
     </div>
   );
@@ -1040,7 +1050,7 @@ function SummaryRow({ label, value, valueClassName }: { label: string; value: st
         {label}
         {label === "Packaging Charge" ? <Info className="h-3.5 w-3.5 text-slate-400" /> : null}
       </dt>
-      <dd className={cn("font-black text-ink", valueClassName)}>{value}</dd>
+      <dd className={cn("font-semibold text-ink", valueClassName)}>{value}</dd>
     </div>
   );
 }

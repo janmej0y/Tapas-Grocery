@@ -75,7 +75,7 @@ export default function MorePage() {
             <button
               type="button"
               onClick={() => toast.success("Open your browser menu and choose Install app or Add to Home screen.")}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 font-bold text-white hover:bg-emerald-800 transition active:scale-[0.98]"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 font-bold text-white hover:bg-leaf-800 transition active:scale-[0.98]"
             >
               Install guide
               <ArrowRight className="h-4 w-4" />
@@ -91,7 +91,7 @@ export default function MorePage() {
               type="button"
               onClick={checkForUpdate}
               disabled={isUpdating}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 font-bold text-white hover:bg-emerald-800 transition active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 font-bold text-white hover:bg-leaf-800 transition active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400"
             >
               <RefreshCw className="h-4 w-4" />
               {isUpdating ? "Checking..." : "Check update"}
@@ -104,7 +104,7 @@ export default function MorePage() {
             text={apkAvailable ? "Download the Android APK package directly." : "APK file is not uploaded yet. Add it to public/downloads/tapas-grocery.apk when ready."}
           >
             {apkAvailable ? (
-              <a href={APK_PATH} download className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 font-bold text-white hover:bg-emerald-800 transition active:scale-[0.98]">
+              <a href={APK_PATH} download className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-accent px-4 py-3 font-bold text-white hover:bg-leaf-800 transition active:scale-[0.98]">
                 <Download className="h-4 w-4" />
                 Download APK
               </a>
@@ -119,7 +119,7 @@ export default function MorePage() {
 
         <section className="premium-card mt-6 rounded-2xl p-5">
           <div className="flex items-start gap-3">
-            <span className="rounded-full bg-emerald-50 p-2 text-primary-accent">
+            <span className="rounded-full bg-leaf-50 p-2 text-primary-accent">
               <Globe2 className="h-5 w-5" />
             </span>
             <div>
@@ -128,14 +128,14 @@ export default function MorePage() {
                 The website always works in normal browser mode too. Customers can shop, login, checkout, track orders, and use the account page without installing anything.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Link href="/" className="inline-flex items-center gap-2 rounded-full bg-primary-accent px-4 py-2 font-bold text-white hover:bg-emerald-800 transition active:scale-[0.98]">
+                <Link href="/" className="inline-flex items-center gap-2 rounded-full bg-primary-accent px-4 py-2 font-bold text-white hover:bg-leaf-800 transition active:scale-[0.98]">
                   Open store
                   <ExternalLink className="h-4 w-4" />
                 </Link>
-                <Link href="/login" className="rounded-full border border-slate-200 bg-white px-4 py-2 font-bold text-heading hover:bg-emerald-50/50 transition">
+                <Link href="/login" className="rounded-full border border-slate-200 bg-white px-4 py-2 font-bold text-heading hover:bg-leaf-50/50 transition">
                   Login
                 </Link>
-                <Link href="/cart" className="rounded-full border border-slate-200 bg-white px-4 py-2 font-bold text-heading hover:bg-emerald-50/50 transition">
+                <Link href="/cart" className="rounded-full border border-slate-200 bg-white px-4 py-2 font-bold text-heading hover:bg-leaf-50/50 transition">
                   Cart
                 </Link>
               </div>
@@ -149,8 +149,8 @@ export default function MorePage() {
 
 function ActionCard({ children, icon, text, title }: { children: ReactNode; icon: ReactNode; text: string; title: string }) {
   return (
-    <section className="premium-card rounded-2xl p-5 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-soft">
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-primary-accent">{icon}</span>
+    <section className="premium-card rounded-2xl p-5 transition hover:-translate-y-0.5 hover:border-leaf-200 hover:shadow-soft">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-leaf-50 text-primary-accent">{icon}</span>
       <h2 className="mt-4 text-xl font-black text-heading">{title}</h2>
       <p className="mt-2 min-h-20 text-sm leading-6 text-slate-500">{text}</p>
       <div className="mt-4">{children}</div>
