@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Bengali } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/components/app-providers";
+import { LoginPromptModal } from "@/components/login-prompt-modal";
 import { Navbar } from "@/components/navbar";
 import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AppProviders>
           <PwaRegister />
           <Navbar />
+          <LoginPromptModal />
           {children}
         </AppProviders>
       </body>

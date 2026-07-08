@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Send, X, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import { useLanguage } from "@/components/language-provider";
+import { assistantSuggestions } from "@/lib/assistant";
 
 type Message = {
   role: "customer" | "assistant";
@@ -21,8 +22,8 @@ export function AiAssistant() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  async function sendMessage() {
-    const message = input.trim();
+  async function sendMessage(overrideMessage?: string) {
+    const message = (overrideMessage ?? input).trim();
 
     if (!message) {
       return;
@@ -60,11 +61,35 @@ export function AiAssistant() {
         <div className="mt-5 grid gap-3">
           {messages.length === 0 ? <p className="text-sm text-slate-500">Ask Tapas Assistant anything about groceries, orders, or policies...</p> : null}
           {messages.map((message, index) => (
-            <div key={`${message.role}-${index}`} className={`rounded-lg px-4 py-3 text-sm ${message.role === "assistant" ? "bg-leaf-50 text-heading" : "bg-heading text-white"}`}>
+            <div
+              key={`${message.role}-${index}`}
+              className={`whitespace-pre-line rounded-lg px-4 py-3 text-sm ${message.role === "assistant" ? "bg-leaf-50 text-heading" : "bg-heading text-white"}`}
+            >
               {message.content}
             </div>
           ))}
+          {isLoading ? (
+            <div className="flex items-center gap-2 rounded-lg bg-leaf-50 px-4 py-3 text-sm text-heading/60">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Thinking...
+            </div>
+          ) : null}
         </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {assistantSuggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => sendMessage(suggestion)}
+              disabled={isLoading}
+              className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-heading/80 transition hover:bg-leaf-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+
         <div className="mt-4 flex gap-2">
           <input
             value={input}
@@ -77,7 +102,7 @@ export function AiAssistant() {
             className="min-w-0 flex-1 rounded-md border border-black/10 px-3 py-2"
             placeholder={t("askAssistant")}
           />
-          <button type="button" onClick={sendMessage} disabled={isLoading} className="rounded-md bg-primary-accent px-4 py-2 text-white hover:bg-leaf-800 disabled:bg-gray-300" aria-label="Send message">
+          <button type="button" onClick={() => sendMessage()} disabled={isLoading} className="rounded-md bg-primary-accent px-4 py-2 text-white hover:bg-leaf-800 disabled:bg-gray-300" aria-label="Send message">
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>

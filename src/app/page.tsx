@@ -12,7 +12,7 @@ import { SearchBar } from "@/components/storefront/search-bar";
 import { Select, Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
-import { getCategoryCounts, PRODUCTS_PER_PAGE, storeCategories } from "@/lib/catalog";
+import { PRODUCTS_PER_PAGE, storeCategories } from "@/lib/catalog";
 import { motion } from "framer-motion";
 import { OfferModal } from "@/components/offer-modal";
 
@@ -63,7 +63,6 @@ export default function HomePage() {
 
   const brands = useMemo(() => Array.from(new Set(products.map((product) => product.brand))).sort(), [products]);
   const preferences = useMemo(() => Array.from(new Set(products.flatMap((product) => product.dietary))).sort(), [products]);
-  const categoryCounts = useMemo(() => getCategoryCounts(products), [products]);
   const activeFilterCount = [activeFilter !== "all", brand !== "all", preference !== "all", minPrice !== "", maxPrice !== "", query.trim() !== ""]
     .filter(Boolean).length;
 
@@ -288,31 +287,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mt-5">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold uppercase text-primary-accent">Shop by aisle</p>
-              <h2 className="text-2xl font-bold text-ink">Find daily essentials faster</h2>
-            </div>
-            <p className="hidden text-sm font-medium text-ink/55 sm:block">{products.length} total products</p>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {categoryCounts.map((item) => (
-              <Link
-                key={item.slug}
-                href={item.slug === "all" ? "/#product-tools" : `/category/${item.slug}`}
-                className="interactive-card premium-card min-h-[88px] rounded-2xl p-4 text-left text-ink"
-              >
-                <span className="line-clamp-2 text-sm font-semibold leading-5">{item.label}</span>
-                <span className="mt-1 block text-xs font-medium text-ink/50">
-                  {item.count} items
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-end justify-between gap-3">
+        <div className="mt-5 flex items-end justify-between gap-3">
           <div>
             <p className="text-sm font-semibold uppercase text-primary-accent">Available now</p>
             <h2 className="text-2xl font-bold text-ink">{activeFilter === "all" ? "All groceries" : activeFilter}</h2>

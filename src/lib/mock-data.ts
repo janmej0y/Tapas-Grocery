@@ -1,4 +1,5 @@
 import type { CustomerAccount, DeliveryAgent, Order, Product, PromoCode } from "@/lib/types";
+import { buildProductReviews } from "@/lib/reviews";
 import { buildWeightVariantPrices, WEIGHT_UNIT_OPTIONS } from "@/lib/units";
 
 const PRODUCT_IMAGE_PLACEHOLDER = "/product-photos/mustard-oil.jpg";
@@ -676,10 +677,10 @@ const additionalProducts: Product[] = additionalProductSeeds.map((item, index) =
   reviews: []
 }));
 
-export const initialProducts: Product[] = [...coreProducts, ...additionalProducts].map((product) => ({
-  ...product,
-  image_url: getProductPhoto(product)
-}));
+export const initialProducts: Product[] = [...coreProducts, ...additionalProducts].map((product) => {
+  const withPhoto = { ...product, image_url: getProductPhoto(product) };
+  return { ...withPhoto, reviews: buildProductReviews(withPhoto) };
+});
 
 function getProductPhoto(product: Product) {
   const slug = slugifyProductImage(product.name);
@@ -811,6 +812,30 @@ export const promoCodes: PromoCode[] = [
     value: 20,
     minCartTotal: 150,
     description: "20% off because we missed you!",
+    active: true
+  },
+  {
+    code: "WEEKEND15",
+    type: "percentage",
+    value: 15,
+    minCartTotal: 250,
+    description: "15% off weekend grocery runs",
+    active: true
+  },
+  {
+    code: "BIGBASKET100",
+    type: "flat",
+    value: 100,
+    minCartTotal: 1000,
+    description: "₹100 off big monthly stock-up orders",
+    active: true
+  },
+  {
+    code: "FRESH30",
+    type: "percentage",
+    value: 30,
+    minCartTotal: 300,
+    description: "30% off fresh produce and dairy baskets",
     active: true
   }
 ];

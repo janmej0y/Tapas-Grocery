@@ -13,6 +13,7 @@ import {
   Search,
   ShieldCheck,
   ShoppingCart,
+  Sparkles,
   Store,
   UserRound,
   UserRoundCheck,
@@ -33,12 +34,12 @@ const menuItems = [
   { href: "/#categories", icon: LayoutGrid, label: "Browse" },
   { href: "/#product-tools", icon: Search, label: "Search" },
   { href: "/#assistant", icon: Bot, label: "Assistant" },
-  { href: "/login", icon: UserRoundCheck, label: "Login" },
   { href: "/account", icon: UserRound, label: "Account & Orders" },
   { href: "/checkout", icon: ShoppingCart, label: "Cart & Checkout" },
   { href: "/policies", icon: ShieldCheck, label: "Policies" },
   { href: "/more", icon: MoreHorizontal, label: "More" },
-  { href: "/admin", icon: LockKeyhole, label: "Admin" }
+  { href: "/admin", icon: LockKeyhole, label: "Admin" },
+  { href: "/login", icon: UserRoundCheck, label: "Login" }
 ];
 
 export function Navbar() {
@@ -92,6 +93,15 @@ export function Navbar() {
           </button>
         </div>
       )}
+      {!user && !isRecruiterDemo ? (
+        <Link
+          href="/login"
+          className="flex items-center justify-center gap-2 bg-primary-accent px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-leaf-800 sm:text-sm"
+        >
+          <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          Login now to unlock welcome offers and exclusive discounts
+        </Link>
+      ) : null}
       <div className="border-b border-zinc-100 bg-slate-50">
         <div className="mx-auto flex max-w-7xl justify-end px-4 py-2 sm:px-6 lg:px-8">
           <LanguageToggle />
